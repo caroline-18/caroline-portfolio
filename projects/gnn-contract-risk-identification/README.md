@@ -36,11 +36,3 @@ To design a graph-based learning framework that captures contextual dependencies
 - Generated interpretable insights highlighting clauses contributing most to contractual risk.
 
 ---
-
-## Repository Structure
-gnn-contract-risk-identification/
-├── README.md
-├── data/ # Contract datasets (or dataset links)
-├── src/ # Graph construction and model code
-├── experiments/ # Training and evaluation scripts
-└── results/ # Outputs, metrics, and visualizations
