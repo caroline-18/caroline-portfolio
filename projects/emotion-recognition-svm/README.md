@@ -20,3 +20,8 @@ The dataset is used for supervised emotion classification from text.
 Publicly available emotion / sentiment text datasets (e.g., social media or dialogue-based corpora).
 
 Note: Raw data is not included in this repository and should be obtained from public sources.
+
+## Results
+
+### Confusion Matrix
+![Confusion Matrix](results/figures/confusion_matrix.png)
