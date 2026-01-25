@@ -1,0 +1,14 @@
+torch>=2.0
+torch-geometric
+torch-scatter
+torch-sparse
+torch-cluster
+torch-spline-conv
+sentence-transformers
+pymupdf
+networkx
+scikit-learn
+numpy
+pandas
+matplotlib
+tqdm
