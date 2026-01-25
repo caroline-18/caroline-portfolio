@@ -56,3 +56,39 @@ This approach highlights the relative contribution of each employee attribute to
   - Career growth indicators  
 - Generated interpretable insights suitable for strategic HR decision-making.
 
+## Project Structure
+employee-retention-xai
+│ README.md
+│
+├───data
+│ Employee.csv
+│
+├───models
+│ best_random_forest.pkl
+│ scaler.pkl
+│
+├───notebooks
+│ Retention.ipynb
+│
+├───results
+│ prediction_result.pdf
+│ figures
+│
+└───src
+workplace.py
+
+
+---
+
+## Skills Demonstrated
+- Predictive Modeling for HR Analytics  
+- Feature Importance Analysis  
+- Applied Machine Learning  
+- Research-Oriented Data Analysis  
+
+---
+
+## Notes
+This project is intended for academic and analytical demonstration purposes.  
+The dataset used is for educational use only.
+
