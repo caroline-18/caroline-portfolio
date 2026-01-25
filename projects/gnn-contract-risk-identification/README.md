@@ -1,38 +1,40 @@
 # Graph Neural Networks for Context-Aware Contract Risk Identification
 
 ## Overview
-Legal contracts contain complex relationships between clauses, entities, and obligations that traditional text-based models often fail to capture. This project leverages **Graph Neural Networks (GNNs)** to model contracts as structured graphs, enabling context-aware identification of contractual risk.
+Contract analysis is a critical task in legal and business domains, where identifying risky clauses is essential for mitigating financial and compliance risks. Traditional text-based approaches often fail to capture the structural and contextual relationships between clauses.
 
-The approach focuses on representing semantic and relational dependencies between clauses to improve risk detection accuracy and interpretability.
+This project proposes a **graph-based learning framework** that models contracts as graphs and applies **Graph Neural Networks (GNNs)** to identify and classify contractual risk in a context-aware manner.
 
 ---
 
 ## Problem Statement
-Traditional NLP models treat contracts as flat text, ignoring structural dependencies such as cross-referenced clauses and entity relationships. This limitation reduces effectiveness in identifying high-risk contractual terms.
+Contractual risk often arises not from isolated clauses but from interactions between multiple clauses, obligations, and entities.
 
 **Objective:**  
-To design a graph-based learning framework that captures contextual dependencies within contracts and accurately identifies risk-prone clauses.
+To design a graph-based machine learning approach that captures inter-clause dependencies and accurately identifies high-risk contractual components.
 
 ---
 
 ## Methodology
-- Preprocessed legal contract documents and extracted clauses, entities, and references.
-- Modeled contracts as graphs where nodes represent clauses/entities and edges encode semantic or logical relationships.
-- Implemented Graph Neural Network architectures to learn contextual embeddings for risk classification.
-- Evaluated model performance on labeled contract data and analyzed predictions using explainability techniques.
+- Represented contracts as graphs where nodes correspond to clauses and edges capture semantic and structural relationships.
+- Encoded textual clause information using feature representations.
+- Applied Graph Neural Networks to learn contextual embeddings for risk classification.
+- Evaluated model performance using classification metrics and qualitative analysis of risk predictions.
 
 ---
 
 ## Tools & Technologies
 - **Programming Language:** Python  
-- **Libraries & Frameworks:** PyTorch, NetworkX, NumPy, Pandas  
-- **Techniques:** Graph Neural Networks, NLP, Feature Engineering, Explainable AI  
+- **Libraries & Frameworks:** PyTorch, PyTorch Geometric, NetworkX  
+- **Techniques:** Graph Neural Networks, Graph Representation Learning, NLP-based Feature Engineering  
 
 ---
 
 ## Results
-- Successfully captured inter-clause dependencies that are missed by sequence-based models.
-- Improved contextual understanding of contract risk compared to baseline text-only approaches.
-- Generated interpretable insights highlighting clauses contributing most to contractual risk.
+- Demonstrated improved risk identification by incorporating clause-level contextual relationships.
+- Highlighted the effectiveness of graph-based modeling over independent text classification approaches.
 
 ---
+
+## Skills Demonstrated
+Graph Modeling • Graph Neural Networks • NLP + Graph Learning • Research-Oriented ML
