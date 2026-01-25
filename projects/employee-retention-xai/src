@@ -1,0 +1,202 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import joblib
+import plotly.graph_objects as go
+from fpdf import FPDF
+import io
+
+# Load trained model and scaler
+model = joblib.load("best_random_forest.pkl")
+scaler = joblib.load("scaler.pkl")
+
+# === Sidebar ===
+st.sidebar.title("🧠 Attrition Predictor")
+st.sidebar.info("Fill out the form to predict whether an employee is likely to leave.")
+
+# === Page Title ===
+st.markdown("<h1 style='text-align: center;'>🔍 Will This Employee Leave?</h1>", unsafe_allow_html=True)
+
+# === Form Input ===
+mode = st.radio("Select Mode", ["🔘 Single Employee Prediction", "📂 Bulk Prediction via CSV"])
+
+if mode == "📂 Bulk Prediction via CSV":
+    st.markdown("### 📥 Upload Employee CSV File")
+
+    # Create and provide downloadable sample CSV
+    sample_csv = """Education,JoiningYear,City,PaymentTier,Age,Gender,EverBenched,ExperienceInCurrentDomain,WorkloadIndex,EngagementScore,SatisfactionLevel,PerformanceRating,Ethical Conduct Rating,Incident Frequency,Training Participation,Peer Review Score,Manager Review Score,Survey Response
+Bachelors,2015,Bangalore,2,29,Male,No,3,0.6,85.0,3.5,4,3,1,Completed,60,55,Positive
+Masters,2016,Pune,1,32,Female,Yes,5,0.8,60.0,2.0,3,2,2,Not Started,40,45,Neutral
+PHD,2014,New Delhi,3,45,Male,No,7,0.3,95.0,4.0,5,5,0,Completed,90,88,Positive
+"""
+    st.download_button(
+        label="📄 Download Sample CSV",
+        data=sample_csv,
+        file_name="sample_employee.csv",
+        mime="text/csv"
+    )
+
+    uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+
+    if uploaded_file is not None:
+        df_bulk = pd.read_csv(uploaded_file)
+
+        # Preprocess
+        original_data = pd.read_csv("Employee.csv").drop("LeaveOrNot", axis=1)
+        combined = pd.concat([df_bulk, original_data], axis=0)
+        encoded = pd.get_dummies(combined, drop_first=True)
+        encoded_bulk = encoded.iloc[:len(df_bulk)]
+        scaled_bulk = scaler.transform(encoded_bulk)
+
+        # Predict
+        predictions = model.predict(scaled_bulk)
+        probabilities = model.predict_proba(scaled_bulk)[:, 1]
+
+        df_bulk["Prediction"] = np.where(predictions == 1, "Likely to Leave", "Likely to Stay")
+        df_bulk["Probability of Leaving (%)"] = (probabilities * 100).round(2)
+
+        st.markdown("### 📊 Prediction Results")
+        st.dataframe(df_bulk)
+
+        # Downloadable result
+        result_csv = df_bulk.to_csv(index=False).encode("utf-8")
+        st.download_button("📥 Download Prediction Results", result_csv, file_name="bulk_predictions.csv", mime="text/csv")
+
+    st.stop()
+
+# === Single Prediction Form ===
+with st.form("employee_form"):
+    col1, col2 = st.columns(2)
+
+    with col1:
+        Education = st.selectbox("🎓 Education", ["Bachelors", "Masters", "PHD"])
+        JoiningYear = st.selectbox("📅 Joining Year", list(range(2012, 2019)))
+        City = st.selectbox("🏙️ City", ["Bangalore", "Pune", "New Delhi"])
+        PaymentTier = st.selectbox("💰 Payment Tier", [1, 2, 3])
+        Age = st.slider("🎂 Age", 20, 60, 30)
+        Gender = st.radio("🚻 Gender", ["Male", "Female"])
+        EverBenched = st.radio("🪑 Ever Benched", ["Yes", "No"])
+        ExperienceInCurrentDomain = st.slider("🧪 Experience in Domain (Years)", 0, 10, 3)
+
+    with col2:
+        WorkloadIndex = st.slider("📈 Workload Index", 0.0, 1.0, 0.5)
+        EngagementScore = st.slider("📊 Engagement Score", 0.0, 100.0, 70.0)
+        SatisfactionLevel = st.slider("🙂 Satisfaction Level", 0.0, 5.0, 3.0)
+        PerformanceRating = st.slider("🏅 Performance Rating", 1, 5, 4)
+        EthicalRating = st.slider("📏 Ethical Conduct Rating", 1, 5, 3)
+        IncidentFrequency = st.slider("🚨 Incident Frequency", 0, 5, 2)
+        TrainingParticipation = st.selectbox("📚 Training Participation", ["Completed", "In Progress", "Not Started"])
+        PeerReview = st.slider("👥 Peer Review Score", 0, 100, 50)
+        ManagerReview = st.slider("👨‍💼 Manager Review Score", 0, 100, 50)
+        SurveyResponse = st.selectbox("📝 Survey Response", ["Positive", "Neutral", "Negative"])
+
+    submitted = st.form_submit_button("📌 Predict")
+
+# === Prediction Logic ===
+if submitted:
+    sample_input = {
+        "Education": Education,
+        "JoiningYear": JoiningYear,
+        "City": City,
+        "PaymentTier": PaymentTier,
+        "Age": Age,
+        "Gender": Gender,
+        "EverBenched": EverBenched,
+        "ExperienceInCurrentDomain": ExperienceInCurrentDomain,
+        "WorkloadIndex": WorkloadIndex,
+        "EngagementScore": EngagementScore,
+        "SatisfactionLevel": SatisfactionLevel,
+        "PerformanceRating": PerformanceRating,
+        "Ethical Conduct Rating": EthicalRating,
+        "Incident Frequency": IncidentFrequency,
+        "Training Participation": TrainingParticipation,
+        "Peer Review Score": PeerReview,
+        "Manager Review Score": ManagerReview,
+        "Survey Response": SurveyResponse
+    }
+
+    sample_df = pd.DataFrame([sample_input])
+    original_data = pd.read_csv("Employee.csv").drop("LeaveOrNot", axis=1)
+    combined = pd.concat([sample_df, original_data], axis=0)
+    encoded = pd.get_dummies(combined, drop_first=True)
+    encoded_sample = encoded.iloc[[0]]
+    scaled = scaler.transform(encoded_sample)
+
+    pred = model.predict(scaled)[0]
+    prob = model.predict_proba(scaled)[0][1]
+
+    # === Prediction Display ===
+    st.markdown("---")
+    st.subheader("🔮 Prediction Result")
+    if pred == 1:
+        st.error(f"⚠️ This employee is likely to **leave**. (Probability: {prob*100:.2f}%)")
+    else:
+        st.success(f"✅ This employee is likely to **stay**. (Probability of leaving: {prob*100:.2f}%)")
+
+    # === Gauge Chart ===
+    st.markdown("### 📟 Attrition Probability Gauge")
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number+delta",
+        value=prob * 100,
+        delta={'reference': 50, 'increasing': {'color': "red"}, 'decreasing': {'color': "green"}},
+        gauge={
+            'axis': {'range': [0, 100]},
+            'bar': {'color': "darkblue"},
+            'steps': [
+                {'range': [0, 40], 'color': "lightgreen"},
+                {'range': [40, 70], 'color': "orange"},
+                {'range': [70, 100], 'color': "red"}
+            ],
+            'threshold': {
+                'line': {'color': "black", 'width': 4},
+                'thickness': 0.75,
+                'value': prob * 100
+            }
+        },
+        title={'text': "Probability of Leaving (%)"}
+    ))
+    st.plotly_chart(fig)
+
+    # === Feature Importance Chart ===
+    st.markdown("### 📌 Top 3 Important Features")
+    importances = model.feature_importances_
+    top_idx = np.argsort(importances)[-3:][::-1]
+    top_features = [(encoded_sample.columns[i], importances[i]) for i in top_idx]
+    df_feat = pd.DataFrame(top_features, columns=["Feature", "Importance"])
+    st.bar_chart(df_feat.set_index("Feature"))
+
+    # === HR Insight Messages ===
+    st.markdown("### 🧠 Key Input Flags")
+    if SatisfactionLevel < 2:
+        st.warning("⚠️ Low satisfaction — potential flight risk.")
+    if WorkloadIndex > 0.7:
+        st.warning("⚠️ High workload — may cause burnout.")
+    if PerformanceRating >= 4:
+        st.info("💡 Strong performance — high value employee.")
+    if SurveyResponse == "Negative":
+        st.warning("⚠️ Negative survey response detected.")
+    if TrainingParticipation == "Not Started":
+        st.warning("🔁 Training not started — consider engagement.")
+
+    # === PDF Report ===
+    def create_pdf(input_data, prediction, probability):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt="Employee Attrition Prediction Report", ln=True, align='C')
+        pdf.ln(10)
+        pdf.set_font("Arial", size=10)
+        for key, value in input_data.items():
+            pdf.cell(200, 10, txt=f"{key}: {value}", ln=True)
+        pdf.ln(10)
+        pred_text = "Likely to Leave" if prediction == 1 else "Likely to Stay"
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(200, 10, txt=f"Prediction: {pred_text}", ln=True)
+        pdf.cell(200, 10, txt=f"Probability of Leaving: {probability * 100:.2f}%", ln=True)
+        output_file = "prediction_result.pdf"
+        pdf.output(output_file)
+        return output_file
+
+    pdf_file = create_pdf(sample_input, pred, prob)
+    with open(pdf_file, "rb") as f:
+        st.download_button("📥 Download PDF Report", f, file_name=pdf_file)
