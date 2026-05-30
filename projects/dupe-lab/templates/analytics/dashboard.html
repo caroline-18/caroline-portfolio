@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}Analytics — Dupe Lab{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 py-10">
+
+  <!-- Header -->
+  <div style="margin-bottom:32px;">
+    <div style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);margin-bottom:6px;">Staff Dashboard</div>
+    <h1 style="font-size:2rem;font-weight:400;line-height:1.2;">Platform Analytics</h1>
+    <p style="font-size:0.85rem;color:var(--ink-lt);margin-top:6px;">Live overview of Dupe Lab activity</p>
+  </div>
+
+  <!-- ── Stat Cards Row ─────────────────────────────────────── -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px;">
+
+    <div class="card p-5" style="text-align:center;">
+      <div style="font-size:2.2rem;font-family:'Cormorant Garamond',serif;color:var(--sage-dk);font-weight:600;">{{ total_products|default:"0" }}</div>
+      <div style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);margin-top:4px;">Products</div>
+    </div>
+
+    <div class="card p-5" style="text-align:center;">
+      <div style="font-size:2.2rem;font-family:'Cormorant Garamond',serif;color:var(--sage-dk);font-weight:600;">{{ total_profiles|default:"0" }}</div>
+      <div style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);margin-top:4px;">Skin Profiles</div>
+    </div>
+
+    <div class="card p-5" style="text-align:center;">
+      <div style="font-size:2.2rem;font-family:'Cormorant Garamond',serif;color:var(--sage-dk);font-weight:600;">{{ total_reviews|default:"0" }}</div>
+      <div style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);margin-top:4px;">Reviews</div>
+    </div>
+
+    <div class="card p-5" style="text-align:center;">
+      <div style="font-size:2.2rem;font-family:'Cormorant Garamond',serif;color:var(--sage-dk);font-weight:600;">{{ total_routines|default:"0" }}</div>
+      <div style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);margin-top:4px;">Routines</div>
+    </div>
+
+    <div class="card p-5" style="text-align:center;">
+      <div style="font-size:2.2rem;font-family:'Cormorant Garamond',serif;color:var(--sage-dk);font-weight:600;">
+        {% if avg_rating %}★ {{ avg_rating }}{% else %}—{% endif %}
+      </div>
+      <div style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);margin-top:4px;">Avg Rating</div>
+    </div>
+
+    <div class="card p-5" style="text-align:center;">
+      <div style="font-size:2.2rem;font-family:'Cormorant Garamond',serif;color:var(--sage-dk);font-weight:600;">{{ analysed_reviews|default:"0" }}</div>
+      <div style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);margin-top:4px;">NLP Analysed</div>
+    </div>
+
+  </div>
+
+  <!-- ── Row 1: Sentiment + Skin Types ─────────────────────── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+    <!-- Sentiment breakdown -->
+    <div class="card p-6">
+      <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:16px;">Review Sentiment</h2>
+      {% if analysed_reviews > 0 %}
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;">
+        <div style="flex:1;background:#f0f7f1;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:1.6rem;font-family:'Cormorant Garamond',serif;color:#16a34a;font-weight:600;">{{ positive_pct }}%</div>
+          <div style="font-size:0.7rem;color:#16a34a;margin-top:2px;">👍 Positive</div>
+          <div style="font-size:0.75rem;color:var(--ink-lt);">{{ positive_count }} reviews</div>
+        </div>
+        <div style="flex:1;background:#f9fafb;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:1.6rem;font-family:'Cormorant Garamond',serif;color:#6b7280;font-weight:600;">{{ neutral_pct }}%</div>
+          <div style="font-size:0.7rem;color:#6b7280;margin-top:2px;">😐 Neutral</div>
+          <div style="font-size:0.75rem;color:var(--ink-lt);">{{ neutral_count }} reviews</div>
+        </div>
+        <div style="flex:1;background:#fff5f5;border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:1.6rem;font-family:'Cormorant Garamond',serif;color:#dc2626;font-weight:600;">{{ negative_pct }}%</div>
+          <div style="font-size:0.7rem;color:#dc2626;margin-top:2px;">👎 Negative</div>
+          <div style="font-size:0.75rem;color:var(--ink-lt);">{{ negative_count }} reviews</div>
+        </div>
+      </div>
+
+      <!-- Stacked bar -->
+      <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;background:#e5e7eb;">
+        {% if positive_pct %}
+        <div style="width:{{ positive_pct }}%;background:#16a34a;transition:width 0.8s ease;"></div>
+        {% endif %}
+        {% if neutral_pct %}
+        <div style="width:{{ neutral_pct }}%;background:#9ca3af;transition:width 0.8s ease;"></div>
+        {% endif %}
+        {% if negative_pct %}
+        <div style="width:{{ negative_pct }}%;background:#dc2626;transition:width 0.8s ease;"></div>
+        {% endif %}
+      </div>
+      <div style="font-size:0.7rem;color:var(--ink-lt);margin-top:8px;">Based on {{ analysed_reviews }} analysed reviews</div>
+
+      {% else %}
+      <div style="text-align:center;padding:30px 0;color:var(--ink-lt);font-size:0.85rem;">
+        No analysed reviews yet.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Skin type distribution -->
+    <div class="card p-6">
+      <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:16px;">Skin Type Distribution</h2>
+      {% if total_profiles > 0 %}
+      <div class="flex flex-col gap-3">
+        {% for st in skin_distribution %}
+        <div>
+          <div class="flex justify-between" style="font-size:0.8rem;margin-bottom:4px;">
+            <span style="color:var(--ink);">{{ st.type }}</span>
+            <span style="color:var(--ink-lt);">{{ st.count }} ({{ st.pct }}%)</span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:4px;height:8px;">
+            <div style="width:{{ st.pct }}%;background:var(--sage);border-radius:4px;height:8px;transition:width 0.6s ease;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:30px 0;color:var(--ink-lt);font-size:0.85rem;">
+        No skin profiles yet.
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- ── Row 2: Reviews Timeline + Price Distribution ───────── -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;">
+
+    <!-- Reviews timeline (last 14 days) -->
+    <div class="card p-6">
+      <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:16px;">Reviews — Last 14 Days</h2>
+      {% with max_day=review_timeline|dictsortreversed:"count"|first %}
+      <div style="display:flex;align-items:flex-end;gap:4px;height:80px;">
+        {% for day in review_timeline %}
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+          {% if max_day.count > 0 %}
+          {% widthratio day.count max_day.count 72 as bar_h %}
+          {% else %}
+          {% with bar_h=2 %}{% endwith %}
+          {% endif %}
+          <div style="width:100%;background:var(--sage);border-radius:3px 3px 0 0;
+                      height:{% if day.count > 0 %}{% widthratio day.count max_day.count 72 %}{% else %}2{% endif %}px;
+                      min-height:2px;transition:height 0.4s ease;"
+               title="{{ day.day }}: {{ day.count }} reviews"></div>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;">
+        <span style="font-size:0.65rem;color:var(--ink-lt);">{{ review_timeline.0.day }}</span>
+        <span style="font-size:0.65rem;color:var(--ink-lt);">Today</span>
+      </div>
+      {% endwith %}
+    </div>
+
+    <!-- Price range distribution -->
+    <div class="card p-6">
+      <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:16px;">Price Ranges</h2>
+      <div class="flex flex-col gap-3">
+        {% for pr in price_ranges %}
+        <div>
+          <div class="flex justify-between" style="font-size:0.78rem;margin-bottom:3px;">
+            <span style="color:var(--ink);">{{ pr.label }}</span>
+            <span style="color:var(--ink-lt);">{{ pr.count }}</span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:3px;height:6px;">
+            {% if total_products > 0 %}
+            <div style="width:{% widthratio pr.count total_products 100 %}%;background:var(--sage-dk);border-radius:3px;height:6px;"></div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Row 3: Top Rated + Most Reviewed ──────────────────── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+    <!-- Top rated products -->
+    <div class="card p-6">
+      <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:16px;">Top Rated Products</h2>
+      {% if top_rated %}
+      <div class="flex flex-col gap-2">
+        {% for product in top_rated %}
+        <a href="{% url 'products:detail' product.slug %}"
+           style="display:flex;align-items:center;justify-content:space-between;
+                  padding:8px 10px;border-radius:8px;text-decoration:none;color:inherit;
+                  transition:background 0.15s;"
+           onmouseover="this.style.background='#f5f9f5'"
+           onmouseout="this.style.background='transparent'">
+          <div>
+            <div style="font-size:0.75rem;color:var(--sage);text-transform:uppercase;letter-spacing:0.05em;">{{ product.brand }}</div>
+            <div style="font-size:0.85rem;font-weight:500;color:var(--ink);">{{ product.name }}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+            <span style="font-size:0.85rem;color:#92400e;font-weight:600;">★ {{ product.rank }}</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:20px 0;color:var(--ink-lt);font-size:0.85rem;">No products yet.</div>
+      {% endif %}
+    </div>
+
+    <!-- Most reviewed products -->
+    <div class="card p-6">
+      <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:16px;">Most Reviewed Products</h2>
+      {% if most_reviewed %}
+      <div class="flex flex-col gap-2">
+        {% for agg in most_reviewed %}
+        <a href="{% url 'products:detail' agg.product.slug %}"
+           style="display:flex;align-items:center;justify-content:space-between;
+                  padding:8px 10px;border-radius:8px;text-decoration:none;color:inherit;
+                  transition:background 0.15s;"
+           onmouseover="this.style.background='#f5f9f5'"
+           onmouseout="this.style.background='transparent'">
+          <div>
+            <div style="font-size:0.75rem;color:var(--sage);text-transform:uppercase;letter-spacing:0.05em;">{{ agg.product.brand }}</div>
+            <div style="font-size:0.85rem;font-weight:500;color:var(--ink);">{{ agg.product.name }}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:12px;">
+            <div style="font-size:0.85rem;font-weight:600;color:var(--sage-dk);">{{ agg.total_reviews }} reviews</div>
+            {% if agg.positive_pct %}
+            <div style="font-size:0.7rem;color:#16a34a;">{{ agg.positive_pct|floatformat:0 }}% positive</div>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:20px 0;color:var(--ink-lt);font-size:0.85rem;">No reviewed products yet.</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- ── Recent Reviews Feed ────────────────────────────────── -->
+  <div class="card p-6">
+    <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:16px;">Recent Reviews</h2>
+    {% if recent_reviews %}
+    <div class="flex flex-col gap-3">
+      {% for review in recent_reviews %}
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:12px;border-radius:8px;
+                  border:1px solid #eef2ea;">
+        <!-- Sentiment dot -->
+        <div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px;
+                    background:{% if review.sentiment_label == 'positive' %}#16a34a{% elif review.sentiment_label == 'negative' %}#dc2626{% else %}#9ca3af{% endif %};"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;flex-wrap:wrap;gap:4px;">
+            <div>
+              <a href="{% url 'products:detail' review.product.slug %}"
+                 style="font-size:0.82rem;font-weight:500;color:var(--sage-dk);text-decoration:none;">
+                {{ review.product.brand }} {{ review.product.name }}
+              </a>
+              <span style="font-size:0.75rem;color:var(--ink-lt);margin-left:8px;">by {{ review.author }}</span>
+            </div>
+            <span style="font-size:0.7rem;color:var(--ink-lt);">{{ review.created_at|date:"d M Y, H:i" }}</span>
+          </div>
+          <p style="font-size:0.82rem;color:var(--ink-lt);line-height:1.5;margin:0;
+                    overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">
+            {{ review.body }}
+          </p>
+        </div>
+        {% if review.rating %}
+        <div style="font-size:0.8rem;color:#92400e;flex-shrink:0;">★ {{ review.rating }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:30px 0;color:var(--ink-lt);font-size:0.85rem;">No reviews yet.</div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

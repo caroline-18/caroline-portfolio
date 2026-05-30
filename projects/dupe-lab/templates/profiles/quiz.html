@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; padding: 0 20px;">
+  <h2>Build your skin profile</h2>
+  <form method="POST">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 20px;">
+      <label style="display:block; margin-bottom:6px;">How oily does your skin get by midday? (1–5)</label>
+      <input type="number" name="shine" min="1" max="5" required style="width:100%; padding:8px;">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display:block; margin-bottom:6px;">How often do you get breakouts? (1–5)</label>
+      <input type="number" name="breakouts" min="1" max="5" required style="width:100%; padding:8px;">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display:block; margin-bottom:6px;">How tight does your skin feel after washing? (1–5)</label>
+      <input type="number" name="tightness" min="1" max="5" required style="width:100%; padding:8px;">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display:block; margin-bottom:6px;">Do you notice redness or reactions? (1–5)</label>
+      <input type="number" name="redness" min="1" max="5" required style="width:100%; padding:8px;">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display:block; margin-bottom:6px;">Climate</label>
+      <select name="climate" style="width:100%; padding:8px;">
+        <option value="temperate">Temperate</option>
+        <option value="arid">Arid / dry</option>
+        <option value="tropical">Tropical / humid</option>
+        <option value="cold">Cold</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <label style="display:block; margin-bottom:6px;">Age range</label>
+      <select name="age_range" style="width:100%; padding:8px;">
+        <option value="18-24">18–24</option>
+        <option value="25-34">25–34</option>
+        <option value="35-44">35–44</option>
+        <option value="45+">45+</option>
+      </select>
+    </div>
+
+    <button type="submit" style="padding:12px 30px; background:#2d6a4f; color:white; border:none; border-radius:6px; cursor:pointer;">
+      Build my profile
+    </button>
+
+  </form>
+</div>
+{% endblock %}

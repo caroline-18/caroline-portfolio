@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}Browse Products — Dupe Lab{% endblock %}
+
+{% block extra_head %}
+<style>
+  .badge-india {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #fff7ed; border: 1px solid #fed7aa;
+    border-radius: 999px; padding: 2px 8px;
+    font-size: 0.62rem; font-weight: 600;
+    color: #c2410c; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .badge-ayurveda {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f0fdf4; border: 1px solid #86efac;
+    border-radius: 999px; padding: 2px 8px;
+    font-size: 0.62rem; font-weight: 600;
+    color: #15803d; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .price-inr { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--sage-dk); }
+  .price-range-track {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px;
+    background: linear-gradient(to right, var(--sage) 0%, var(--sage) var(--pct,50%), #e8e3da var(--pct,50%));
+    border-radius: 999px; outline: none; cursor: pointer;
+  }
+  .price-range-track::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--sage-dk);
+    border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.2); cursor: pointer;
+  }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--mist); border: 1px solid var(--sage-lt);
+    border-radius: 999px; padding: 4px 12px;
+    font-size: 0.75rem; color: var(--sage-dk); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-chip.active { background: var(--sage-dk); color: white; border-color: var(--sage-dk); }
+  .sort-btn {
+    background: none; border: 1px solid #e8e3da; border-radius: 6px;
+    padding: 6px 12px; font-size: 0.78rem; cursor: pointer;
+    color: var(--ink-lt); font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .sort-btn.active, .sort-btn:hover { background: var(--mist); border-color: var(--sage-lt); color: var(--sage-dk); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-10">
+
+  <div class="mb-8">
+    <h1 style="font-size:2.2rem;font-weight:400;margin-bottom:6px;">Browse Products</h1>
+    <p style="color:var(--ink-lt);font-size:0.9rem;">Search Indian skincare brands — find dupes and save money.</p>
+  </div>
+
+  <form method="get" id="filter-form" class="card p-5 mb-5">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div class="md:col-span-2 relative">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search products, brands or ingredients…"
+               class="search-input" autocomplete="off" id="list-search">
+        <div id="list-results" style="display:none;"></div>
+      </div>
+      <select name="category" class="search-input" style="cursor:pointer;">
+        <option value="">All categories</option>
+        {% for val, label in categories %}
+        <option value="{{ val }}" {% if category == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="skin_type" class="search-input" style="cursor:pointer;">
+        <option value="">All skin types</option>
+        <option value="dry" {% if skin_type == "dry" %}selected{% endif %}>Dry</option>
+        <option value="oily" {% if skin_type == "oily" %}selected{% endif %}>Oily</option>
+        <option value="normal" {% if skin_type == "normal" %}selected{% endif %}>Normal</option>
+        <option value="combination" {% if skin_type == "combination" %}selected{% endif %}>Combination</option>
+        <option value="sensitive" {% if skin_type == "sensitive" %}selected{% endif %}>Sensitive</option>
+      </select>
+    </div>
+
+    <!-- INR Price Range -->
+    <div class="mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span style="font-size:0.78rem;color:var(--ink-lt);">Price Range (INR)</span>
+        <span style="font-size:0.9rem;font-weight:500;color:var(--sage-dk);">
+          ₹<span id="min-display">{{ min_price|default:"0" }}</span> — ₹<span id="max-display">{{ max_price|default:"5000" }}</span>
+        </span>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label style="font-size:0.72rem;color:var(--ink-lt);display:block;margin-bottom:4px;">Min ₹</label>
+          <input type="range" name="min_price" id="min-slider" min="0" max="5000" step="50"
+                 value="{{ min_price|default:'0' }}" class="price-range-track" oninput="updatePriceDisplay()">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;color:var(--ink-lt);display:block;margin-bottom:4px;">Max ₹</label>
+          <input type="range" name="max_price" id="max-slider" min="0" max="5000" step="50"
+                 value="{{ max_price|default:'5000' }}" class="price-range-track" oninput="updatePriceDisplay()">
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3 flex-wrap">
+        <span style="font-size:0.72rem;color:var(--ink-lt);padding-top:3px;">Quick:</span>
+        <button type="button" class="filter-chip" onclick="setPrice(0,300)">Under ₹300</button>
+        <button type="button" class="filter-chip" onclick="setPrice(0,500)">Under ₹500</button>
+        <button type="button" class="filter-chip" onclick="setPrice(300,999)">₹300–999</button>
+        <button type="button" class="filter-chip" onclick="setPrice(1000,2000)">₹1000–2000</button>
+        <button type="button" class="filter-chip" onclick="setPrice(2000,5000)">Luxury ₹2000+</button>
+      </div>
+    </div>
+
+    <!-- Special filters -->
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <span style="font-size:0.78rem;color:var(--ink-lt);">Filter by:</span>
+      <label class="filter-chip {% if made_in_india %}active{% endif %}">
+        <input type="checkbox" name="made_in_india" value="1" {% if made_in_india %}checked{% endif %}
+               style="display:none;" onchange="this.closest('form').submit()">
+        🇮🇳 Made in India
+      </label>
+      <label class="filter-chip {% if is_ayurvedic %}active{% endif %}">
+        <input type="checkbox" name="is_ayurvedic" value="1" {% if is_ayurvedic %}checked{% endif %}
+               style="display:none;" onchange="this.closest('form').submit()">
+        🌿 Ayurvedic
+      </label>
+    </div>
+
+    <div class="flex items-center gap-3 flex-wrap">
+      <button type="submit" class="btn-primary">Search</button>
+      {% if query or category or skin_type or made_in_india or is_ayurvedic or min_price or max_price %}
+      <a href="{% url 'products:list' %}" class="btn-outline">Clear all</a>
+      {% endif %}
+      <div class="ml-auto flex items-center gap-2">
+        <span style="font-size:0.75rem;color:var(--ink-lt);">Sort:</span>
+        <button type="button" class="sort-btn {% if sort == 'price_asc' %}active{% endif %}" onclick="setSort('price_asc')">Price ↑</button>
+        <button type="button" class="sort-btn {% if sort == 'price_desc' %}active{% endif %}" onclick="setSort('price_desc')">Price ↓</button>
+        <button type="button" class="sort-btn {% if sort == 'rank' %}active{% endif %}" onclick="setSort('rank')">Top Rated</button>
+        <input type="hidden" name="sort" id="sort-input" value="{{ sort|default:'' }}">
+      </div>
+    </div>
+  </form>
+
+  <!-- Active filter pills -->
+  {% if query or category or skin_type or made_in_india or is_ayurvedic or min_price or max_price %}
+  <div class="flex flex-wrap gap-2 mb-5">
+    <span style="font-size:0.78rem;color:var(--ink-lt);padding-top:2px;">Active filters:</span>
+    {% if query %}<span class="pill pill-sage">Search: {{ query }}</span>{% endif %}
+    {% if category %}<span class="pill pill-mist">{{ category|capfirst }}</span>{% endif %}
+    {% if skin_type %}<span class="pill pill-mist">{{ skin_type|capfirst }} skin</span>{% endif %}
+    {% if made_in_india %}<span class="pill pill-gold">🇮🇳 Made in India</span>{% endif %}
+    {% if is_ayurvedic %}<span class="pill pill-sage">🌿 Ayurvedic</span>{% endif %}
+    {% if min_price or max_price %}<span class="pill pill-mist">₹{{ min_price|default:"0" }} – ₹{{ max_price|default:"5000" }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="flex items-center justify-between mb-5">
+    <p style="font-size:0.85rem;color:var(--ink-lt);">
+      {% if query %}Results for <strong style="color:var(--ink);">"{{ query }}"</strong> — {% endif %}
+      <strong style="color:var(--ink);">{{ total }}</strong> product{{ total|pluralize }}
+    </p>
+  </div>
+
+  {% if products %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for product in products %}
+    <div class="card">
+      <div class="p-5 flex flex-col h-full">
+
+        <div class="flex items-center gap-2 flex-wrap mb-3">
+          <div class="pill pill-mist">{{ product.get_category_display }}</div>
+          {% if product.made_in_india %}<span class="badge-india">🇮🇳 India</span>{% endif %}
+          {% if product.is_ayurvedic %}<span class="badge-ayurveda">🌿 Ayurvedic</span>{% endif %}
+          {% if product.rank %}<span style="font-size:0.78rem;color:var(--gold);margin-left:auto;">★ {{ product.rank }}</span>{% endif %}
+        </div>
+
+        <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:3px;">{{ product.brand }}</div>
+        <h3 style="font-size:0.95rem;font-weight:500;line-height:1.4;flex:1;margin-bottom:10px;">{{ product.name }}</h3>
+
+        <div class="mb-3">
+          {% for ing in product.get_ingredient_list|slice:":4" %}
+          <span class="ing-chip">{{ ing }}</span>
+          {% endfor %}
+          {% if product.ingredient_count > 4 %}
+          <span style="font-size:0.72rem;color:var(--ink-lt);">+{{ product.ingredient_count|add:"-4" }} more</span>
+          {% endif %}
+        </div>
+
+        {% with types=product.get_skin_types %}{% if types %}
+        <div class="mb-3">{% for t in types %}<span class="pill pill-sage" style="font-size:0.62rem;">{{ t }}</span>{% endfor %}</div>
+        {% endif %}{% endwith %}
+
+        <div class="flex items-center justify-between mt-auto pt-3" style="border-top:1px solid #f0ebe3;">
+          <span class="price-inr">
+            {% if product.price %}{% if product.currency == 'INR' %}₹{% else %}${% endif %}{{ product.price|floatformat:0 }}{% else %}—{% endif %}
+          </span>
+          <div class="flex gap-2 flex-wrap">
+            <a href="{% url 'products:detail' product.slug %}" class="btn-outline" style="padding:6px 12px;font-size:0.75rem;">Details</a>
+            <a href="{% url 'recommendations:dupe_finder' product.slug %}" class="btn-primary" style="padding:6px 12px;font-size:0.75rem;">Find Dupes</a>
+            {% if product.purchase_url %}
+            <a href="{{ product.purchase_url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               style="padding:6px 12px;font-size:0.75rem;display:inline-flex;align-items:center;gap:4px;
+                      background:#16a34a;color:white;border-radius:6px;font-weight:600;
+                      border:none;text-decoration:none;transition:background 0.15s;"
+               onmouseover="this.style.background='#15803d'"
+               onmouseout="this.style.background='#16a34a'">
+              🛒 Buy Now
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card p-16 text-center">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🔍</div>
+    <h3 style="font-size:1.3rem;font-weight:400;margin-bottom:8px;">No products found</h3>
+    <p style="color:var(--ink-lt);font-size:0.88rem;margin-bottom:20px;">Try adjusting the price range or clearing filters.</p>
+    <a href="{% url 'products:list' %}" class="btn-primary">Clear all filters</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  initAutocomplete(document.getElementById('list-search'), document.getElementById('list-results'));
+  function updatePriceDisplay() {
+    const min = document.getElementById('min-slider').value;
+    const max = document.getElementById('max-slider').value;
+    document.getElementById('min-display').textContent = min;
+    document.getElementById('max-display').textContent = max;
+    document.getElementById('min-slider').style.setProperty('--pct', (min/5000*100)+'%');
+    document.getElementById('max-slider').style.setProperty('--pct', (max/5000*100)+'%');
+  }
+  function setPrice(min, max) {
+    document.getElementById('min-slider').value = min;
+    document.getElementById('max-slider').value = max;
+    updatePriceDisplay();
+    document.getElementById('filter-form').submit();
+  }
+  function setSort(val) {
+    document.getElementById('sort-input').value = val;
+    document.getElementById('filter-form').submit();
+  }
+  updatePriceDisplay();
+</script>
+{% endblock %}

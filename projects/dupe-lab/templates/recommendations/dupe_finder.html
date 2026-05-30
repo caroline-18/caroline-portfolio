@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Dupes for {{ product.name }} — Dupe Lab{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-10">
+
+  <!-- Header -->
+  <div class="mb-8">
+    <div style="font-size:0.78rem;color:var(--ink-lt);margin-bottom:12px;">
+      <a href="{% url 'products:list' %}" style="color:var(--sage-dk);text-decoration:none;">Products</a>
+      <span style="margin:0 6px;">›</span>
+      <a href="{% url 'products:detail' product.slug %}" style="color:var(--sage-dk);text-decoration:none;">{{ product.name }}</a>
+      <span style="margin:0 6px;">›</span>
+      <span>Dupe Finder</span>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+      <div>
+        <h1 style="font-size:2rem;font-weight:400;line-height:1.2;margin-bottom:6px;">
+          Dupes for <em>{{ product.name }}</em>
+        </h1>
+        <p style="color:var(--ink-lt);font-size:0.88rem;">
+          by {{ product.brand }}
+          {% if product.price %} · <strong style="color:var(--sage-dk);">${{ product.price }}</strong>{% endif %}
+        </p>
+      </div>
+
+      <!-- Skin type filter -->
+      <form method="get" class="flex items-center gap-3">
+        <label style="font-size:0.78rem;color:var(--ink-lt);white-space:nowrap;">Filter skin type:</label>
+        <select name="skin_type" class="search-input" style="width:auto;cursor:pointer;" onchange="this.form.submit()">
+          <option value="">All types</option>
+          <option value="dry" {% if skin_type == "dry" %}selected{% endif %}>Dry</option>
+          <option value="oily" {% if skin_type == "oily" %}selected{% endif %}>Oily</option>
+          <option value="normal" {% if skin_type == "normal" %}selected{% endif %}>Normal</option>
+          <option value="combination" {% if skin_type == "combination" %}selected{% endif %}>Combination</option>
+          <option value="sensitive" {% if skin_type == "sensitive" %}selected{% endif %}>Sensitive</option>
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <!-- Budget Dupes spotlight -->
+  {% if dupes %}
+  <div class="card p-6 mb-8" style="border:2px solid #b5cdb7;background:linear-gradient(135deg,#f5f9f5,white);">
+    <div class="flex items-center gap-3 mb-5">
+      <div style="background:linear-gradient(135deg,var(--sage-dk),var(--sage));color:white;padding:4px 12px;border-radius:999px;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;">
+        ✓ Budget Dupes Found
+      </div>
+      <span style="font-size:0.82rem;color:var(--ink-lt);">Similar formula · Lower price</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-{% if dupes|length == 1 %}1{% elif dupes|length == 2 %}2{% else %}3{% endif %} gap-4">
+      {% for r in dupes|slice:":3" %}
+      <a href="{% url 'products:detail' r.product.slug %}" style="text-decoration:none;color:inherit;">
+        <div style="background:white;border:1px solid #d5e8d6;border-radius:10px;padding:14px;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(74,110,77,0.15)'" onmouseout="this.style.boxShadow='none'">
+          <div class="dupe-badge mb-2" style="display:inline-block;">Budget Dupe</div>
+          <div style="font-size:0.7rem;color:var(--sage);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;">{{ r.product.brand }}</div>
+          <div style="font-size:0.88rem;font-weight:500;margin-bottom:10px;line-height:1.3;">{{ r.product.name }}</div>
+
+          <div class="flex items-end justify-between">
+            <div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--sage-dk);">
+                {% if r.product.price %}${{ r.product.price }}{% else %}—{% endif %}
+              </div>
+              {% if r.product.price and product.price %}
+              <div style="font-size:0.7rem;color:#16a34a;font-weight:500;">
+                Save ${% widthratio r.product.price product.price 1 %} · {{ r.product.price|floatformat:0 }}% of original
+              </div>
+              {% endif %}
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:1.1rem;font-weight:600;color:var(--sage-dk);">{{ r.dupe_score }}%</div>
+              <div style="font-size:0.65rem;color:var(--ink-lt);">dupe score</div>
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <div style="font-size:0.68rem;color:var(--ink-lt);margin-bottom:3px;">Ingredient match: {{ r.similarity_score|floatformat:0|add:"" }}%</div>
+            <div class="sim-bar">
+              <div class="sim-bar-fill" style="width:{{ r.similarity_score|floatformat:0 }}%;"></div>
+            </div>
+          </div>
+
+          {% if r.product.purchase_url %}
+          <div class="mt-3" onclick="event.preventDefault();">
+            <a href="{{ r.product.purchase_url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               style="display:inline-flex;align-items:center;gap:5px;width:100%;justify-content:center;
+                      padding:7px 12px;background:#16a34a;color:white;border-radius:7px;
+                      font-size:0.75rem;font-weight:600;text-decoration:none;transition:background 0.15s;"
+               onmouseover="this.style.background='#15803d'"
+               onmouseout="this.style.background='#16a34a'">
+              🛒 Buy Now
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- All similar products table -->
+  <div class="card">
+    <div class="p-5" style="border-bottom:1px solid #f0ebe3;">
+      <div class="flex items-center justify-between">
+        <h2 style="font-size:1.3rem;font-weight:400;">All Similar Products</h2>
+        <span style="font-size:0.82rem;color:var(--ink-lt);">{{ similar|length }} results</span>
+      </div>
+    </div>
+
+    {% if similar %}
+    <div class="overflow-x-auto">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#faf8f5;border-bottom:1px solid #e8e3da;">
+            <th style="padding:10px 16px;text-align:left;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);font-weight:500;">Product</th>
+            <th style="padding:10px 16px;text-align:center;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);font-weight:500;">Ingredient Match</th>
+            <th style="padding:10px 16px;text-align:center;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);font-weight:500;">Price</th>
+            <th style="padding:10px 16px;text-align:center;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);font-weight:500;">Dupe Score</th>
+            <th style="padding:10px 16px;text-align:right;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);font-weight:500;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in similar %}
+          <tr style="border-bottom:1px solid #f5f1eb;transition:background 0.1s;" onmouseover="this.style.background='#faf8f5'" onmouseout="this.style.background='white'">
+            <td style="padding:12px 16px;">
+              <div class="flex items-center gap-3">
+                {% if r.is_budget_dupe %}
+                <span class="dupe-badge" style="flex-shrink:0;">Dupe</span>
+                {% endif %}
+                <div>
+                  <div style="font-size:0.7rem;color:var(--sage);text-transform:uppercase;letter-spacing:0.06em;">{{ r.product.brand }}</div>
+                  <div style="font-weight:500;font-size:0.88rem;">{{ r.product.name }}</div>
+                  <div>
+                    {% for t in r.product.get_skin_types %}
+                    <span class="pill pill-mist" style="font-size:0.6rem;">{{ t }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <td style="padding:12px 16px;text-align:center;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                <span style="font-weight:600;font-size:0.9rem;color:{% if r.similarity_score >= 0.8 %}var(--sage-dk){% elif r.similarity_score >= 0.6 %}var(--gold){% else %}var(--ink-lt){% endif %};">
+                  {{ r.similarity_score|floatformat:0 }}%
+                </span>
+                <div class="sim-bar" style="width:80px;">
+                  <div class="sim-bar-fill" style="width:{{ r.similarity_score|floatformat:0 }}%;"></div>
+                </div>
+              </div>
+            </td>
+
+            <td style="padding:12px 16px;text-align:center;">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--sage-dk);">
+                {% if r.product.price %}${{ r.product.price }}{% else %}—{% endif %}
+              </div>
+              {% if r.product.price and product.price %}
+                {% if r.product.price < product.price %}
+                <div style="font-size:0.68rem;color:#16a34a;">▼ cheaper</div>
+                {% elif r.product.price > product.price %}
+                <div style="font-size:0.68rem;color:var(--rose);">▲ pricier</div>
+                {% endif %}
+              {% endif %}
+            </td>
+
+            <td style="padding:12px 16px;text-align:center;">
+              <div style="font-size:1rem;font-weight:600;color:var(--ink);">{{ r.dupe_score }}%</div>
+            </td>
+
+            <td style="padding:12px 16px;text-align:right;">
+              <div class="flex items-center justify-end gap-2">
+                <a href="{% url 'products:detail' r.product.slug %}" class="btn-outline" style="padding:5px 12px;font-size:0.75rem;">View</a>
+                {% if r.product.purchase_url %}
+                <a href="{{ r.product.purchase_url }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;
+                          background:#16a34a;color:white;border-radius:6px;
+                          font-size:0.75rem;font-weight:600;text-decoration:none;
+                          white-space:nowrap;transition:background 0.15s;"
+                   onmouseover="this.style.background='#15803d'"
+                   onmouseout="this.style.background='#16a34a'">
+                  🛒 Buy
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+    <div style="padding:48px;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:10px;">🔬</div>
+      <p style="color:var(--ink-lt);font-size:0.88rem;margin-bottom:16px;">
+        No similar products found yet.<br>
+        Run <code style="background:#f0ebe3;padding:2px 6px;border-radius:4px;font-size:0.8rem;">python manage.py build_similarity_cache</code> to compute similarities.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

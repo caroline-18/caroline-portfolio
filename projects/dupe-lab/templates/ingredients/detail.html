@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ ingredient.name }} — Dupe Lab{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-10">
+
+  <div style="font-size:0.78rem;color:var(--ink-lt);margin-bottom:16px;">
+    <a href="{% url 'ingredients:explorer' %}" style="color:var(--sage-dk);text-decoration:none;">Ingredients</a>
+    <span style="margin:0 6px;">›</span> {{ ingredient.name }}
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <div class="md:col-span-2 flex flex-col gap-5">
+      <div class="card p-7">
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="pill pill-mist">{{ ingredient.get_category_display }}</span>
+          <span class="pill {% if ingredient.risk_level == 'safe' or ingredient.risk_level == 'low' %}pill-sage{% elif ingredient.risk_level in 'high avoid' %}pill-rose{% else %}pill-gold{% endif %}">
+            {{ ingredient.get_risk_level_display }}
+          </span>
+          {% for flag in ingredient.get_flags %}
+          <span class="pill pill-gold">{{ flag }}</span>
+          {% endfor %}
+        </div>
+
+        <h1 style="font-size:2rem;font-weight:400;margin-bottom:4px;">{{ ingredient.name }}</h1>
+        {% if ingredient.inci_name and ingredient.inci_name != ingredient.name %}
+        <p style="font-size:0.8rem;color:var(--ink-lt);margin-bottom:16px;font-style:italic;">INCI: {{ ingredient.inci_name }}</p>
+        {% endif %}
+
+        {% if ingredient.description %}
+        <p style="font-size:0.92rem;line-height:1.7;color:var(--ink-lt);">{{ ingredient.description }}</p>
+        {% endif %}
+      </div>
+
+      {% if ingredient.benefits %}
+      <div class="card p-6">
+        <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:10px;color:var(--sage-dk);">✓ Benefits</h2>
+        <p style="font-size:0.88rem;color:var(--ink-lt);line-height:1.7;">{{ ingredient.benefits }}</p>
+      </div>
+      {% endif %}
+
+      {% if ingredient.side_effects %}
+      <div class="card p-6" style="border-left:3px solid var(--gold);">
+        <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:10px;color:#92400e;">⚠ Side Effects</h2>
+        <p style="font-size:0.88rem;color:var(--ink-lt);line-height:1.7;">{{ ingredient.side_effects }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="flex flex-col gap-5">
+      <!-- Products containing this ingredient -->
+      <div class="card p-5">
+        <h3 style="font-size:0.95rem;font-weight:500;margin-bottom:12px;">Products containing this</h3>
+        {% if products_with %}
+        <div class="flex flex-col gap-3">
+          {% for p in products_with %}
+          <a href="{% url 'products:detail' p.slug %}" style="text-decoration:none;color:inherit;">
+            <div style="border-bottom:1px solid #f5f1eb;padding-bottom:10px;">
+              <div style="font-size:0.7rem;color:var(--sage);text-transform:uppercase;letter-spacing:0.06em;">{{ p.brand }}</div>
+              <div style="font-size:0.83rem;font-weight:500;">{{ p.name }}</div>
+              {% if p.price %}<div style="font-size:0.78rem;color:var(--sage-dk);">${{ p.price }}</div>{% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size:0.82rem;color:var(--ink-lt);">No products in database yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

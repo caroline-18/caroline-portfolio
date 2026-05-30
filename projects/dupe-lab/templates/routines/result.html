@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width:700px; margin:40px auto; padding:0 20px;">
+  <h2>{{ routine.name }}</h2>
+
+  {% if conflicts %}
+  <div style="background:#fff3cd; border:1px solid #ffc107;
+              border-radius:8px; padding:16px; margin-bottom:24px;">
+    <strong>Ingredient conflicts detected</strong>
+    {% for conflict in conflicts %}
+    <div style="margin-top:8px; font-size:13px;">
+      {{ conflict.product_a }} + {{ conflict.product_b }}
+      — {{ conflict.reason }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="margin-top:20px;">
+    {% for step in steps %}
+    <div style="display:flex; align-items:center; gap:16px;
+                padding:16px; background:#fff; border:1px solid #eee;
+                border-radius:10px; margin-bottom:12px;">
+      <div style="width:36px; height:36px; background:#2d6a4f; color:white;
+                  border-radius:50%; display:flex; align-items:center;
+                  justify-content:center; font-weight:600; flex-shrink:0;">
+        {{ step.step_num }}
+      </div>
+      <div>
+        <div style="font-size:11px; color:#888; text-transform:uppercase;">
+          {{ step.category }}
+        </div>
+        <div style="font-weight:600;">{{ step.product.name }}</div>
+        <div style="font-size:13px; color:#555;">{{ step.product.brand }}</div>
+      </div>
+      <div style="margin-left:auto; font-weight:600; color:#2d6a4f;">
+        ₹{{ step.product.price }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:24px; display:flex; gap:12px;">
+    <a href="/routines/build/"
+       style="padding:10px 20px; background:#f0f0f0; color:#333;
+              border-radius:6px; text-decoration:none;">
+      Build another
+    </a>
+    <a href="/routines/mine/"
+       style="padding:10px 20px; background:#2d6a4f; color:white;
+              border-radius:6px; text-decoration:none;">
+      My routines
+    </a>
+  </div>
+</div>
+{% endblock %}

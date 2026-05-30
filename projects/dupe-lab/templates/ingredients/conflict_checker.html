@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width:800px; margin:40px auto; padding:0 20px;">
+  <h2>Ingredient conflict checker</h2>
+  <p style="color:#666;">
+    Paste your product ingredients below to check for harmful combinations.
+  </p>
+
+  <form method="POST">
+    {% csrf_token %}
+    <textarea name="ingredients" rows="5"
+              placeholder="Paste ingredients here e.g. Retinol, Glycolic Acid, Niacinamide, Vitamin C..."
+              style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd;
+                     font-size:14px; box-sizing:border-box;">{{ query }}</textarea>
+    <button type="submit"
+            style="margin-top:12px; padding:12px 30px; background:#2d6a4f;
+                   color:white; border:none; border-radius:6px; cursor:pointer;">
+      Check conflicts
+    </button>
+  </form>
+
+  {% if query %}
+    <div style="margin-top:32px;">
+      {% if results %}
+        <h3 style="color:#dc2626;">
+          {{ results|length }} conflict{{ results|length|pluralize }} found
+        </h3>
+        {% for result in results %}
+        <div style="background:#fff; border-left:4px solid
+                    {% if result.severity == 'avoid' %}#dc2626
+                    {% elif result.severity == 'caution' %}#f59e0b
+                    {% else %}#3b82f6{% endif %};
+                    border-radius:8px; padding:16px; margin-bottom:16px;
+                    box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <strong style="font-size:15px;">
+              {{ result.ingredient_a }} + {{ result.ingredient_b }}
+            </strong>
+            <span style="font-size:12px; padding:3px 10px; border-radius:20px;
+                         background:
+                         {% if result.severity == 'avoid' %}#fee2e2; color:#dc2626
+                         {% elif result.severity == 'caution' %}#fef3c7; color:#d97706
+                         {% else %}#dbeafe; color:#2563eb{% endif %};">
+              {{ result.severity|capfirst }}
+            </span>
+          </div>
+
+          <p style="color:#555; font-size:14px; margin:0 0 8px;">
+            {{ result.reason }}
+          </p>
+
+          {% if result.safe_alternative %}
+          <div style="background:#f0fdf4; border-radius:6px; padding:10px; font-size:13px; color:#166534;">
+            Tip: {{ result.safe_alternative }}
+          </div>
+          {% endif %}
+
+        </div>
+        {% endfor %}
+
+      {% else %}
+        <div style="background:#f0fdf4; border-radius:8px; padding:20px; text-align:center;">
+          <p style="color:#166534; font-size:16px; margin:0;">
+            No conflicts detected — your ingredients look safe to use together.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

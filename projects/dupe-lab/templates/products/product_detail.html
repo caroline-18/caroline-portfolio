@@ -1,0 +1,622 @@
+{% extends "base.html" %}
+{% block title %}{{ product.brand }} {{ product.name }} — Dupe Lab{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-10">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:0.78rem;color:var(--ink-lt);margin-bottom:20px;">
+    <a href="{% url 'products:list' %}" style="color:var(--sage-dk);text-decoration:none;">Products</a>
+    <span style="margin:0 6px;">›</span>
+    <span>{{ product.name }}</span>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- ── Left: Product Info ─────────────────────────────── -->
+    <div class="lg:col-span-2 flex flex-col gap-6">
+
+      <!-- Header card -->
+      <div class="card p-7">
+        <div class="flex items-start justify-between flex-wrap gap-4">
+          <div class="flex-1">
+            <div class="flex gap-2 mb-3">
+              <span class="pill pill-mist">{{ product.get_category_display }}</span>
+              {% if product.rank %}
+                <span class="pill" style="background:#fef3c7;color:#92400e;">★ {{ product.rank }}</span>
+              {% endif %}
+            </div>
+            <div style="font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage);margin-bottom:5px;">{{ product.brand }}</div>
+            <h1 style="font-size:1.8rem;font-weight:400;line-height:1.2;margin-bottom:12px;">{{ product.name }}</h1>
+
+            <!-- ── Price Section ── -->
+            <div id="price-section" style="margin:16px 0;">
+              {% if best_price %}
+                <div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--sage-dk);">
+                  ₹{{ best_price.price }}
+                </div>
+                <div style="font-size:0.78rem;color:var(--ink-lt);margin-top:4px;">
+                  Best price on {{ best_price.retailer|capfirst }}
+                </div>
+                {% if best_price.url %}
+                <a href="/products/resolve-url/{{ product.id }}/?url={{ best_price.url|urlencode }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+                          padding:9px 18px;background:#16a34a;color:white;border-radius:8px;
+                          font-weight:600;font-size:0.85rem;text-decoration:none;
+                          transition:background 0.15s;font-family:'DM Sans',sans-serif;"
+                   onmouseover="this.style.background='#15803d'"
+                   onmouseout="this.style.background='#16a34a'">
+                  🛒 Buy Now
+                </a>
+                {% endif %}
+              {% elif product.price %}
+                <div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--sage-dk);">
+                  {% if product.currency == 'INR' %}₹{% else %}${% endif %}{{ product.price|floatformat:0 }}
+                </div>
+              {% endif %}
+
+              <div style="margin-top:10px;">
+                <button onclick="refreshPrice({{ product.id }})"
+                        id="refresh-btn"
+                        style="padding:8px 16px;background:#f0f0f0;border:1px solid #ddd;
+                               border-radius:6px;cursor:pointer;font-size:0.8rem;
+                               font-family:'DM Sans',sans-serif;">
+                  Refresh price
+                </button>
+                <span id="refresh-status" style="font-size:0.75rem;color:var(--ink-lt);margin-left:8px;"></span>
+              </div>
+            </div>
+            <!-- ── End Price Section ── -->
+
+          </div>
+
+          <!-- Skin type badges -->
+          {% with types=product.get_skin_types %}
+          {% if types %}
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);margin-bottom:8px;">Good for</div>
+            <div class="flex flex-wrap gap-2">
+              {% for t in types %}
+              <span class="pill pill-sage">{{ t }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+        </div>
+
+        <div class="flex gap-3 mt-5 flex-wrap">
+          <a href="{% url 'recommendations:dupe_finder' product.slug %}" class="btn-primary">
+            🔬 Find Dupes
+          </a>
+          {% if product.purchase_url %}
+          <a href="{{ product.purchase_url }}"
+             target="_blank"
+             rel="noopener noreferrer"
+             style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;
+                    background:#16a34a;color:white;border-radius:8px;font-weight:600;
+                    font-size:0.85rem;text-decoration:none;transition:background 0.15s;
+                    font-family:'DM Sans',sans-serif;"
+             onmouseover="this.style.background='#15803d'"
+             onmouseout="this.style.background='#16a34a'">
+            🛒 Buy Now
+          </a>
+          {% endif %}
+          <a href="{% url 'products:list' %}" class="btn-outline">← Back</a>
+        </div>
+      </div>
+
+      <!-- Ingredients card -->
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 style="font-size:1.3rem;font-weight:400;">Ingredients <span style="color:var(--ink-lt);font-size:0.9rem;font-family:'DM Sans';">({{ product.ingredient_count }})</span></h2>
+          <span style="font-size:0.75rem;color:var(--ink-lt);">Click for details</span>
+        </div>
+        <div id="ingredient-chips">
+          {% for ing in ingredients %}
+          <button class="ing-chip"
+                  onclick="showIngredientModal('{{ ing|escapejs }}')"
+                  title="Click for info on {{ ing }}">{{ ing }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Safety report -->
+      {% if safety_flags %}
+      <div class="card p-6">
+        <h2 style="font-size:1.3rem;font-weight:400;margin-bottom:16px;">
+          Safety Analysis
+          <span class="pill {% if safety_flags.overall_risk == 'safe' %}pill-sage{% elif safety_flags.overall_risk == 'high' %}pill-rose{% else %}pill-gold{% endif %} ml-2">
+            {{ safety_flags.overall_risk|capfirst }} Risk
+          </span>
+        </h2>
+        {% if safety_flags.is_clean %}
+        <div style="background:#f0f7f1;border-radius:8px;padding:14px;font-size:0.85rem;color:#16a34a;">
+          ✓ No known irritants or flagged ingredients detected.
+        </div>
+        {% else %}
+        <div class="flex flex-col gap-3">
+          {% for flag in safety_flags.flags %}
+          <div style="background:#fffbf0;border:1px solid #f0e0a0;border-radius:8px;padding:12px 14px;">
+            <div class="flex items-center justify-between mb-2">
+              <strong style="font-size:0.85rem;">{{ flag.category }}</strong>
+              <span class="pill {% if flag.risk_level == 'high' %}pill-rose{% else %}pill-gold{% endif %}" style="font-size:0.65rem;">{{ flag.risk_level|capfirst }}</span>
+            </div>
+            <p style="font-size:0.82rem;color:var(--ink-lt);margin-bottom:6px;">{{ flag.description }}</p>
+            <div style="font-size:0.75rem;color:var(--ink-lt);">
+              Found: {% for m in flag.matched %}<em>{{ m }}</em>{% if not forloop.last %}, {% endif %}{% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- ══════════════════════════════════════════════════════
+           REVIEWS SECTION
+           ══════════════════════════════════════════════════════ -->
+      <div class="card p-6">
+        <h2 style="font-size:1.3rem;font-weight:400;margin-bottom:16px;">
+          Community Reviews
+          {% if review_aggregate and review_aggregate.total_reviews > 0 %}
+            <span style="color:var(--ink-lt);font-size:0.9rem;font-family:'DM Sans';">
+              ({{ review_aggregate.total_reviews }})
+            </span>
+          {% endif %}
+        </h2>
+
+        <!-- ── Sentiment & Aspect Summary ── -->
+        {% if review_aggregate and review_aggregate.total_reviews > 0 %}
+        <div style="background:#f8faf5;border-radius:10px;padding:16px;margin-bottom:20px;">
+
+          <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:10px;">Overall Sentiment</div>
+
+          {% if review_aggregate.positive_pct %}
+          <div class="flex items-center gap-3 mb-2">
+            <span style="font-size:0.75rem;color:#16a34a;width:64px;">👍 Positive</span>
+            <div style="flex:1;background:#e5e7eb;border-radius:4px;height:8px;">
+              <div style="width:{{ review_aggregate.positive_pct }}%;background:#16a34a;border-radius:4px;height:8px;"></div>
+            </div>
+            <span style="font-size:0.75rem;color:var(--ink-lt);width:36px;text-align:right;">{{ review_aggregate.positive_pct|floatformat:0 }}%</span>
+          </div>
+          {% endif %}
+
+          {% if review_aggregate.neutral_pct %}
+          <div class="flex items-center gap-3 mb-2">
+            <span style="font-size:0.75rem;color:#6b7280;width:64px;">😐 Neutral</span>
+            <div style="flex:1;background:#e5e7eb;border-radius:4px;height:8px;">
+              <div style="width:{{ review_aggregate.neutral_pct }}%;background:#9ca3af;border-radius:4px;height:8px;"></div>
+            </div>
+            <span style="font-size:0.75rem;color:var(--ink-lt);width:36px;text-align:right;">{{ review_aggregate.neutral_pct|floatformat:0 }}%</span>
+          </div>
+          {% endif %}
+
+          {% if review_aggregate.negative_pct %}
+          <div class="flex items-center gap-3 mb-2">
+            <span style="font-size:0.75rem;color:#dc2626;width:64px;">👎 Negative</span>
+            <div style="flex:1;background:#e5e7eb;border-radius:4px;height:8px;">
+              <div style="width:{{ review_aggregate.negative_pct }}%;background:#dc2626;border-radius:4px;height:8px;"></div>
+            </div>
+            <span style="font-size:0.75rem;color:var(--ink-lt);width:36px;text-align:right;">{{ review_aggregate.negative_pct|floatformat:0 }}%</span>
+          </div>
+          {% endif %}
+
+          <!-- Aspect scores grid -->
+          {% if review_aggregate.avg_hydration or review_aggregate.avg_texture or review_aggregate.avg_efficacy %}
+          <div style="border-top:1px solid #e0ead1;padding-top:14px;margin-top:14px;">
+            <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:10px;">Aspect Scores</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;">
+
+              {% if review_aggregate.avg_hydration %}
+              <div style="background:white;border-radius:8px;padding:10px 12px;border:1px solid #e0ead1;">
+                <div style="font-size:0.7rem;color:var(--ink-lt);margin-bottom:4px;">💧 Hydration</div>
+                <div style="font-size:1.1rem;font-weight:600;color:var(--sage-dk);">{% widthratio review_aggregate.avg_hydration 1 100 %}%</div>
+                <div style="background:#e5e7eb;border-radius:3px;height:4px;margin-top:4px;">
+                  <div style="width:{% widthratio review_aggregate.avg_hydration 1 100 %}%;background:var(--sage);border-radius:3px;height:4px;"></div>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if review_aggregate.avg_texture %}
+              <div style="background:white;border-radius:8px;padding:10px 12px;border:1px solid #e0ead1;">
+                <div style="font-size:0.7rem;color:var(--ink-lt);margin-bottom:4px;">✨ Texture</div>
+                <div style="font-size:1.1rem;font-weight:600;color:var(--sage-dk);">{% widthratio review_aggregate.avg_texture 1 100 %}%</div>
+                <div style="background:#e5e7eb;border-radius:3px;height:4px;margin-top:4px;">
+                  <div style="width:{% widthratio review_aggregate.avg_texture 1 100 %}%;background:var(--sage);border-radius:3px;height:4px;"></div>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if review_aggregate.avg_scent %}
+              <div style="background:white;border-radius:8px;padding:10px 12px;border:1px solid #e0ead1;">
+                <div style="font-size:0.7rem;color:var(--ink-lt);margin-bottom:4px;">🌸 Scent</div>
+                <div style="font-size:1.1rem;font-weight:600;color:var(--sage-dk);">{% widthratio review_aggregate.avg_scent 1 100 %}%</div>
+                <div style="background:#e5e7eb;border-radius:3px;height:4px;margin-top:4px;">
+                  <div style="width:{% widthratio review_aggregate.avg_scent 1 100 %}%;background:var(--sage);border-radius:3px;height:4px;"></div>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if review_aggregate.avg_irritation %}
+              <div style="background:white;border-radius:8px;padding:10px 12px;border:1px solid #e0ead1;">
+                <div style="font-size:0.7rem;color:var(--ink-lt);margin-bottom:4px;">🛡️ Gentleness</div>
+                <div style="font-size:1.1rem;font-weight:600;color:var(--sage-dk);">{% widthratio review_aggregate.avg_irritation 1 100 %}%</div>
+                <div style="background:#e5e7eb;border-radius:3px;height:4px;margin-top:4px;">
+                  <div style="width:{% widthratio review_aggregate.avg_irritation 1 100 %}%;background:var(--sage);border-radius:3px;height:4px;"></div>
+                </div>
+              </div>
+              {% endif %}
+
+              {% if review_aggregate.avg_efficacy %}
+              <div style="background:white;border-radius:8px;padding:10px 12px;border:1px solid #e0ead1;">
+                <div style="font-size:0.7rem;color:var(--ink-lt);margin-bottom:4px;">⚡ Efficacy</div>
+                <div style="font-size:1.1rem;font-weight:600;color:var(--sage-dk);">{% widthratio review_aggregate.avg_efficacy 1 100 %}%</div>
+                <div style="background:#e5e7eb;border-radius:3px;height:4px;margin-top:4px;">
+                  <div style="width:{% widthratio review_aggregate.avg_efficacy 1 100 %}%;background:var(--sage);border-radius:3px;height:4px;"></div>
+                </div>
+              </div>
+              {% endif %}
+
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- ── Individual Review Cards ── -->
+        {% if reviews %}
+        <div class="flex flex-col gap-3 mb-6">
+          {% for review in reviews %}
+          <div style="border:1px solid #e8ede4;border-radius:10px;padding:14px 16px;">
+            <div class="flex items-start justify-between mb-2 flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span style="font-size:0.82rem;font-weight:500;color:var(--ink);">{{ review.author }}</span>
+                {% if review.rating %}
+                <span style="font-size:0.78rem;color:#92400e;letter-spacing:1px;">
+                  {% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+                </span>
+                {% endif %}
+              </div>
+              <div class="flex items-center gap-2">
+                {% if review.sentiment_label %}
+                <span class="pill {% if review.sentiment_label == 'positive' %}pill-sage{% elif review.sentiment_label == 'negative' %}pill-rose{% else %}pill-mist{% endif %}"
+                      style="font-size:0.65rem;">
+                  {% if review.sentiment_label == 'positive' %}👍
+                  {% elif review.sentiment_label == 'negative' %}👎
+                  {% else %}😐{% endif %}
+                  {{ review.sentiment_label|capfirst }}
+                </span>
+                {% endif %}
+                <span style="font-size:0.7rem;color:var(--ink-lt);">{{ review.created_at|date:"d M Y" }}</span>
+              </div>
+            </div>
+            <p style="font-size:0.85rem;color:var(--ink-lt);line-height:1.6;margin:0;">{{ review.body }}</p>
+            {% if review.source and review.source != 'manual' %}
+            <div style="font-size:0.7rem;color:var(--ink-lt);margin-top:6px;opacity:0.7;">via {{ review.source|capfirst }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:24px 0;color:var(--ink-lt);font-size:0.85rem;margin-bottom:16px;">
+          No reviews yet — be the first to share your experience.
+        </div>
+        {% endif %}
+
+        <!-- ── Submit Review Form ── -->
+        <div style="border-top:1px solid #e8ede4;padding-top:20px;">
+          <h3 style="font-size:1rem;font-weight:500;margin-bottom:14px;color:var(--ink);">Write a Review</h3>
+
+          {% if review_submitted %}
+          <div style="background:#f0f7f1;border-radius:8px;padding:14px;font-size:0.85rem;color:#16a34a;margin-bottom:14px;">
+            ✓ Thanks! Your review was submitted and is being analysed in the background.
+          </div>
+          {% endif %}
+
+          {% if review_error %}
+          <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:14px;font-size:0.85rem;color:#dc2626;margin-bottom:14px;">
+            {{ review_error }}
+          </div>
+          {% endif %}
+
+          <form method="POST" action="" style="display:flex;flex-direction:column;gap:12px;">
+            {% csrf_token %}
+
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <input type="text" name="author" placeholder="Your name (optional)"
+                     style="flex:1;min-width:140px;padding:9px 12px;border:1px solid #dde8d0;
+                            border-radius:8px;font-size:0.85rem;font-family:'DM Sans',sans-serif;
+                            outline:none;background:white;color:var(--ink);"
+                     onfocus="this.style.borderColor='var(--sage)'"
+                     onblur="this.style.borderColor='#dde8d0'">
+
+              <select name="rating"
+                      style="padding:9px 12px;border:1px solid #dde8d0;border-radius:8px;
+                             font-size:0.85rem;font-family:'DM Sans',sans-serif;
+                             background:white;cursor:pointer;outline:none;color:var(--ink);">
+                <option value="">Rate this product</option>
+                <option value="5">★★★★★  Excellent</option>
+                <option value="4">★★★★☆  Good</option>
+                <option value="3">★★★☆☆  Average</option>
+                <option value="2">★★☆☆☆  Poor</option>
+                <option value="1">★☆☆☆☆  Terrible</option>
+              </select>
+            </div>
+
+            <textarea name="body" rows="4"
+                      placeholder="Share your experience — texture, results, how your skin reacted..."
+                      style="width:100%;padding:10px 12px;border:1px solid #dde8d0;border-radius:8px;
+                             font-size:0.85rem;font-family:'DM Sans',sans-serif;resize:vertical;
+                             outline:none;box-sizing:border-box;color:var(--ink);"
+                      onfocus="this.style.borderColor='var(--sage)'"
+                      onblur="this.style.borderColor='#dde8d0'"></textarea>
+
+            <button type="submit"
+                    style="align-self:flex-start;padding:10px 24px;background:var(--sage-dk);
+                           color:white;border:none;border-radius:8px;font-size:0.85rem;
+                           font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;
+                           transition:background 0.15s;"
+                    onmouseover="this.style.background='var(--sage)'"
+                    onmouseout="this.style.background='var(--sage-dk)'">
+              Submit Review
+            </button>
+          </form>
+        </div>
+
+      </div>
+      <!-- ══ End Reviews Section ══ -->
+
+    </div>
+
+    <!-- ── Right: Quick Dupes ─────────────────────────────── -->
+    <div class="flex flex-col gap-5">
+
+      <div class="card p-5">
+        <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:4px;">Budget Dupes</h2>
+        <p style="font-size:0.78rem;color:var(--ink-lt);margin-bottom:14px;">Similar formula, lower price</p>
+
+        {% if budget_dupes %}
+        <div class="flex flex-col gap-3">
+          {% for dupe in budget_dupes %}
+          <div style="border:1px solid #e0ead1;border-radius:8px;padding:10px 12px;transition:background 0.15s;"
+               onmouseover="this.style.background='#f5f9f5'"
+               onmouseout="this.style.background='white'">
+            <a href="{% url 'products:detail' dupe.product.slug %}" style="text-decoration:none;color:inherit;display:block;">
+              <div class="flex items-start justify-between mb-1">
+                <div style="font-size:0.72rem;color:var(--sage);text-transform:uppercase;letter-spacing:0.06em;">{{ dupe.product.brand }}</div>
+                <span class="dupe-badge">Budget Dupe</span>
+              </div>
+              <div style="font-size:0.85rem;font-weight:500;margin-bottom:6px;line-height:1.3;">{{ dupe.product.name }}</div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--sage-dk);">
+                    {% if dupe.product.price %}
+                      {% if dupe.product.currency == 'INR' %}₹{% else %}${% endif %}{{ dupe.product.price|floatformat:0 }}
+                    {% else %}—{% endif %}
+                  </div>
+                  {% if dupe.saving %}
+                  <div style="font-size:0.7rem;color:#16a34a;">
+                    Save {% if product.currency == 'INR' %}₹{% else %}${% endif %}{{ dupe.saving|floatformat:0 }} vs original
+                  </div>
+                  {% endif %}
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:0.7rem;color:var(--ink-lt);margin-bottom:2px;">{{ dupe.score|floatformat:0 }}% match</div>
+                  <div class="sim-bar" style="width:80px;">
+                    <div class="sim-bar-fill" style="width:{{ dupe.score|floatformat:0 }}%;"></div>
+                  </div>
+                </div>
+              </div>
+            </a>
+            {% if dupe.product.purchase_url %}
+            <div class="mt-2">
+              <a href="{{ dupe.product.purchase_url }}"
+                 target="_blank" rel="noopener noreferrer"
+                 style="display:flex;align-items:center;justify-content:center;gap:5px;
+                        padding:6px 10px;background:#16a34a;color:white;border-radius:6px;
+                        font-size:0.72rem;font-weight:600;text-decoration:none;transition:background 0.15s;"
+                 onmouseover="this.style.background='#15803d'"
+                 onmouseout="this.style.background='#16a34a'">
+                🛒 Buy Now
+              </a>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <a href="{% url 'recommendations:dupe_finder' product.slug %}" class="btn-primary mt-4"
+           style="width:100%;text-align:center;display:block;">
+          See all recommendations →
+        </a>
+
+        {% else %}
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:1.5rem;margin-bottom:8px;">🔬</div>
+          <p style="font-size:0.82rem;color:var(--ink-lt);margin-bottom:12px;">
+            Run the full analysis to discover budget dupes.
+          </p>
+          <a href="{% url 'recommendations:dupe_finder' product.slug %}" class="btn-primary" style="display:inline-block;">
+            Find Dupes
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Quick stats -->
+      <div class="card p-5">
+        <h3 style="font-size:0.9rem;font-weight:500;margin-bottom:12px;letter-spacing:0.03em;">Product Summary</h3>
+        <div class="flex flex-col gap-3">
+          <div class="flex justify-between" style="font-size:0.83rem;">
+            <span style="color:var(--ink-lt);">Ingredients</span>
+            <strong>{{ product.ingredient_count }}</strong>
+          </div>
+          <div class="flex justify-between" style="font-size:0.83rem;">
+            <span style="color:var(--ink-lt);">Category</span>
+            <strong>{{ product.get_category_display }}</strong>
+          </div>
+          {% if product.price %}
+          <div class="flex justify-between" style="font-size:0.83rem;">
+            <span style="color:var(--ink-lt);">Price</span>
+            <strong style="color:var(--sage-dk);">{% if product.currency == 'INR' %}₹{% else %}${% endif %}{{ product.price|floatformat:0 }}</strong>
+          </div>
+          {% endif %}
+          {% if product.rank %}
+          <div class="flex justify-between" style="font-size:0.83rem;">
+            <span style="color:var(--ink-lt);">Rating</span>
+            <strong style="color:var(--gold);">★ {{ product.rank|default:"—" }}</strong>
+          </div>
+          {% endif %}
+          {% if review_aggregate and review_aggregate.total_reviews > 0 %}
+          <div style="border-top:1px solid #e8ede4;margin-top:4px;padding-top:8px;">
+            <div class="flex justify-between" style="font-size:0.83rem;">
+              <span style="color:var(--ink-lt);">Reviews</span>
+              <strong>{{ review_aggregate.total_reviews }}</strong>
+            </div>
+            {% if review_aggregate.avg_rating %}
+            <div class="flex justify-between mt-2" style="font-size:0.83rem;">
+              <span style="color:var(--ink-lt);">Avg rating</span>
+              <strong style="color:var(--gold);">★ {{ review_aggregate.avg_rating|floatformat:1 }}</strong>
+            </div>
+            {% endif %}
+            {% if review_aggregate.positive_pct %}
+            <div class="flex justify-between mt-2" style="font-size:0.83rem;">
+              <span style="color:var(--ink-lt);">Positive</span>
+              <strong style="color:#16a34a;">{{ review_aggregate.positive_pct|floatformat:0 }}%</strong>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Ingredient Info Modal ─────────────────────────────────────── -->
+<div id="ing-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(28,26,24,0.4);backdrop-filter:blur(4px);" onclick="closeModal(event)">
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:16px;padding:28px;width:min(460px,90vw);box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <h3 id="ing-name" style="font-size:1.3rem;font-weight:400;margin-bottom:4px;"></h3>
+        <span id="ing-category" class="pill pill-mist"></span>
+      </div>
+      <button onclick="document.getElementById('ing-modal').style.display='none'" style="border:none;background:none;cursor:pointer;font-size:1.3rem;color:var(--ink-lt);">✕</button>
+    </div>
+    <div id="ing-loading" style="text-align:center;padding:20px;color:var(--ink-lt);font-size:0.85rem;">Loading…</div>
+    <div id="ing-content" style="display:none;">
+      <div class="flex flex-col gap-3">
+        <div>
+          <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:4px;">Description</div>
+          <p id="ing-description" style="font-size:0.85rem;color:var(--ink-lt);line-height:1.6;"></p>
+        </div>
+        <div id="ing-benefits-section">
+          <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:4px;">Benefits</div>
+          <p id="ing-benefits" style="font-size:0.85rem;color:var(--ink-lt);line-height:1.6;"></p>
+        </div>
+        <div id="ing-risk-section">
+          <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:4px;">Risk Level</div>
+          <span id="ing-risk" class="pill"></span>
+        </div>
+        <div id="ing-flags-section" style="display:none;">
+          <div style="font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:4px;">Flags</div>
+          <div id="ing-flags"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Refresh Price ── */
+function refreshPrice(productId) {
+  const btn    = document.getElementById('refresh-btn');
+  const status = document.getElementById('refresh-status');
+  btn.disabled = true;
+  btn.textContent = 'Fetching...';
+  status.textContent = '';
+
+  fetch(`/products/refresh-price/${productId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json',
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      status.textContent = `Updated — ₹${data.price} on ${data.retailer} (${data.count} stores found)`;
+      status.style.color = '#16a34a';
+      const priceEl = document.querySelector('#price-section [style*="Cormorant"]');
+      if (priceEl) priceEl.textContent = `₹${Math.round(data.price)}`;
+      const retailerEl = document.querySelector('#price-section [style*="0.78rem"]');
+      if (retailerEl) retailerEl.textContent = `Best price on ${data.retailer}`;
+    } else {
+      status.textContent = 'No prices found. Try again later.';
+      status.style.color = '#dc2626';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Refresh price';
+  })
+  .catch(() => {
+    status.textContent = 'Error fetching price.';
+    status.style.color = '#dc2626';
+    btn.disabled = false;
+    btn.textContent = 'Refresh price';
+  });
+}
+
+/* ── Ingredient Modal ── */
+async function showIngredientModal(name) {
+  const modal   = document.getElementById('ing-modal');
+  const loading = document.getElementById('ing-loading');
+  const content = document.getElementById('ing-content');
+
+  document.getElementById('ing-name').textContent = name;
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  modal.style.display   = 'block';
+
+  try {
+    const res  = await fetch(`/api/ingredient-info/?name=${encodeURIComponent(name)}`);
+    const data = await res.json();
+
+    document.getElementById('ing-description').textContent = data.description || 'No description available.';
+    document.getElementById('ing-benefits').textContent    = data.benefits    || '—';
+    document.getElementById('ing-category').textContent    = data.category    || '';
+
+    const riskEl = document.getElementById('ing-risk');
+    const level  = data.risk_level || 'safe';
+    riskEl.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+    const riskColors = { safe:'pill-sage', low:'pill-sage', moderate:'pill-gold', high:'pill-rose', avoid:'pill-rose' };
+    riskEl.className = 'pill ' + (riskColors[level] || 'pill-mist');
+
+    if (data.flags && data.flags.length) {
+      document.getElementById('ing-flags').innerHTML =
+        data.flags.map(f => `<span class="pill pill-gold" style="margin:2px;">${f}</span>`).join('');
+      document.getElementById('ing-flags-section').style.display = 'block';
+    } else {
+      document.getElementById('ing-flags-section').style.display = 'none';
+    }
+
+    loading.style.display = 'none';
+    content.style.display = 'block';
+  } catch(e) {
+    loading.textContent = 'Could not load ingredient info.';
+  }
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('ing-modal')) {
+    document.getElementById('ing-modal').style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

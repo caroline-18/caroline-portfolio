@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width:900px; margin:40px auto; padding:0 20px;">
+  <h2>Build your skincare routine</h2>
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <div style="margin-bottom:20px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">Routine type</label>
+      <select name="routine_type" style="padding:8px; border-radius:6px; border:1px solid #ddd;">
+        <option value="am">Morning (AM)</option>
+        <option value="pm">Evening (PM)</option>
+        <option value="weekly">Weekly treatment</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">
+        Select products for your routine
+      </label>
+
+      <input type="text" id="productSearch"
+             placeholder="Search by name, brand or category..."
+             oninput="filterProducts(this.value)"
+             style="width:100%; padding:10px; border-radius:8px;
+                    border:1px solid #ddd; font-size:14px;
+                    box-sizing:border-box; margin-bottom:12px;">
+
+      <div style="margin-bottom:8px; font-size:13px; color:#888;">
+        Showing <span id="visibleCount">{{ products|length }}</span> of {{ products|length }} products
+      </div>
+    </div>
+
+    <div id="productGrid"
+         style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+                gap:10px; max-height:500px; overflow-y:auto;
+                border:1px solid #eee; border-radius:8px; padding:12px;">
+      {% for product in products %}
+      <label class="product-card"
+             data-name="{{ product.name|lower }}"
+             data-brand="{{ product.brand|lower }}"
+             data-category="{{ product.category|lower }}"
+             style="display:flex; align-items:flex-start; gap:8px;
+                    background:#f9f9f9; border-radius:8px; padding:10px; cursor:pointer;">
+        <input type="checkbox" name="product_ids" value="{{ product.id }}" style="margin-top:3px;">
+        <div>
+          <div style="font-size:13px; font-weight:500;">{{ product.name }}</div>
+          <div style="font-size:11px; color:#888;">{{ product.brand }}</div>
+          <div style="font-size:11px; color:#2d6a4f; margin-top:2px;">
+            {{ product.category }} · ₹{{ product.price }}
+          </div>
+        </div>
+      </label>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:12px; font-size:13px; color:#888;">
+      Selected: <span id="selectedCount">0</span> products
+    </div>
+
+    <button type="submit"
+            style="margin-top:16px; padding:12px 30px; background:#2d6a4f;
+                   color:white; border:none; border-radius:6px; cursor:pointer;">
+      Build routine
+    </button>
+  </form>
+</div>
+
+<script>
+function filterProducts(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('.product-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const name     = card.dataset.name     || '';
+    const brand    = card.dataset.brand    || '';
+    const category = card.dataset.category || '';
+    const match = !q || name.includes(q) || brand.includes(q) || category.includes(q);
+    card.style.display = match ? 'flex' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('visibleCount').textContent = visible;
+}
+
+document.querySelectorAll('input[type=checkbox]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const count = document.querySelectorAll('input[name=product_ids]:checked').length;
+    document.getElementById('selectedCount').textContent = count;
+  });
+});
+</script>
+{% endblock %}

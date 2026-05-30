@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dupe Lab — AI Skincare Finder{% endblock %}</title>
+  <meta name="description" content="Find cheaper skincare dupes powered by AI ingredient analysis">
+
+  <!-- Fonts: Cormorant Garamond (display) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --sage:    #7a9e7e;
+      --sage-lt: #b5cdb7;
+      --sage-dk: #4a6e4d;
+      --cream:   #f7f3ec;
+      --parchment: #ede8df;
+      --ink:     #1c1a18;
+      --ink-lt:  #4a4640;
+      --gold:    #c9a84c;
+      --rose:    #d4847a;
+      --mist:    #e8eee9;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    h1, h2, h3, .serif { font-family: 'Cormorant Garamond', serif; }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      opacity: 0.4;
+    }
+
+    /* Nav */
+    .nav-link {
+      font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--ink-lt); text-decoration: none; transition: color 0.2s;
+      font-weight: 500;
+    }
+    .nav-link:hover { color: var(--sage-dk); }
+
+    /* Pill tags */
+    .pill {
+      display: inline-block; padding: 2px 10px; border-radius: 999px;
+      font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 500;
+    }
+    .pill-sage    { background: #dbe9dc; color: var(--sage-dk); }
+    .pill-gold    { background: #f5e8c8; color: #7a5c1e; }
+    .pill-rose    { background: #f5dbd8; color: #8b3a33; }
+    .pill-mist    { background: var(--mist); color: var(--ink-lt); }
+
+    /* Cards */
+    .card {
+      background: white; border: 1px solid #e8e3da;
+      border-radius: 12px; overflow: hidden;
+      transition: box-shadow 0.25s, transform 0.25s;
+    }
+    .card:hover { box-shadow: 0 8px 30px rgba(28,26,24,0.1); transform: translateY(-2px); }
+
+    /* Budget dupe badge */
+    .dupe-badge {
+      background: linear-gradient(135deg, #4a6e4d, #7a9e7e);
+      color: white; font-size: 0.65rem; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 3px 10px; border-radius: 999px;
+      font-weight: 600;
+    }
+
+    /* Similarity bar */
+    .sim-bar { height: 4px; border-radius: 999px; background: #e8e3da; overflow: hidden; }
+    .sim-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--sage), var(--sage-dk)); transition: width 0.8s ease; }
+
+    /* Search input */
+    .search-input {
+      background: white; border: 1.5px solid #d5cfc6;
+      border-radius: 8px; padding: 10px 16px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+      width: 100%; transition: border-color 0.2s, box-shadow 0.2s;
+      color: var(--ink);
+    }
+    .search-input:focus {
+      outline: none; border-color: var(--sage);
+      box-shadow: 0 0 0 3px rgba(122,158,126,0.15);
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: var(--sage-dk); color: white;
+      padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      letter-spacing: 0.04em; font-weight: 500; transition: background 0.2s, transform 0.15s;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-primary:hover { background: var(--sage-dk); filter: brightness(1.1); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent; color: var(--sage-dk);
+      padding: 9px 20px; border-radius: 8px; border: 1.5px solid var(--sage);
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; letter-spacing: 0.04em; font-weight: 500;
+      transition: all 0.2s; text-decoration: none; display: inline-block;
+    }
+    .btn-outline:hover { background: var(--mist); }
+
+    /* Risk levels */
+    .risk-safe     { color: #16a34a; }
+    .risk-low      { color: #65a30d; }
+    .risk-moderate { color: #d97706; }
+    .risk-high     { color: #dc2626; }
+    .risk-avoid    { color: #7f1d1d; }
+
+    /* Ingredient chip */
+    .ing-chip {
+      display: inline-block; background: var(--mist);
+      border: 1px solid #dde4de; border-radius: 6px;
+      padding: 3px 9px; font-size: 0.75rem; color: var(--ink-lt);
+      margin: 2px; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    }
+    .ing-chip:hover { background: #dbe9dc; border-color: var(--sage-lt); color: var(--sage-dk); }
+
+    /* Page fade-in */
+    main { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* Dropdown */
+    #autocomplete-results {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+      background: white; border: 1px solid #d5cfc6;
+      border-radius: 0 0 8px 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      max-height: 280px; overflow-y: auto;
+    }
+    .autocomplete-item {
+      padding: 10px 16px; cursor: pointer;
+      border-bottom: 1px solid #f0ebe3; font-size: 0.85rem;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: background 0.1s;
+    }
+    .autocomplete-item:hover { background: var(--mist); }
+    .autocomplete-item:last-child { border-bottom: none; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--parchment); }
+    ::-webkit-scrollbar-thumb { background: var(--sage-lt); border-radius: 3px; }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="relative">
+
+  <!-- ─── Navigation ─────────────────────────────────────────────────── -->
+  <nav style="background:white; border-bottom:1px solid #e8e3da;" class="sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+
+      <a href="{% url 'products:home' %}" class="flex items-center gap-3" style="text-decoration:none">
+        <div style="width:32px;height:32px;background:var(--sage-dk);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+            <line x1="9" y1="9" x2="9.01" y2="9"/>
+            <line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;color:var(--ink);line-height:1;">Dupe Lab</div>
+          <div style="font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--sage);">AI Skincare Finder</div>
+        </div>
+      </a>
+
+      <div class="hidden md:flex items-center gap-8">
+        <a href="{% url 'products:list' %}" class="nav-link">Products</a>
+        <a href="{% url 'ingredients:explorer' %}" class="nav-link">Ingredients</a>
+        <a href="{% url 'ingredients:safety_checker' %}" class="nav-link">Safety Check</a>
+        <a href="{% url 'visualization:map' %}" class="nav-link">Similarity Map</a>
+      </div>
+
+      <a href="{% url 'products:list' %}" class="btn-primary" style="padding:8px 18px;font-size:0.78rem;">
+        Find Dupes →
+      </a>
+    </div>
+  </nav>
+
+  <!-- ─── Messages ──────────────────────────────────────────────────── -->
+  {% if messages %}
+  <div class="max-w-6xl mx-auto px-6 pt-4">
+    {% for msg in messages %}
+    <div class="card p-3 mb-2" style="border-left:3px solid {% if msg.tags == 'error' %}var(--rose){% else %}var(--sage){% endif %};">
+      <span style="font-size:0.85rem;">{{ msg }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ─── Main Content ──────────────────────────────────────────────── -->
+  <main class="relative z-10">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ─── Footer ────────────────────────────────────────────────────── -->
+  <footer style="border-top:1px solid #e8e3da;margin-top:80px;" class="py-12">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex flex-col md:flex-row items-start justify-between gap-8">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;margin-bottom:6px;">Dupe Lab</div>
+          <p style="font-size:0.82rem;color:var(--ink-lt);max-width:260px;line-height:1.6;">
+            AI-powered ingredient analysis to find smarter, cheaper skincare alternatives.
+          </p>
+        </div>
+        <div class="flex gap-12">
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage);margin-bottom:10px;font-weight:500;">Explore</div>
+            <div class="flex flex-col gap-2">
+              <a href="{% url 'products:list' %}" style="font-size:0.82rem;color:var(--ink-lt);text-decoration:none;">Products</a>
+              <a href="{% url 'ingredients:explorer' %}" style="font-size:0.82rem;color:var(--ink-lt);text-decoration:none;">Ingredients</a>
+              <a href="{% url 'visualization:map' %}" style="font-size:0.82rem;color:var(--ink-lt);text-decoration:none;">Similarity Map</a>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--sage);margin-bottom:10px;font-weight:500;">Tools</div>
+            <div class="flex flex-col gap-2">
+              <a href="{% url 'ingredients:safety_checker' %}" style="font-size:0.82rem;color:var(--ink-lt);text-decoration:none;">Safety Checker</a>
+              <a href="/admin/" style="font-size:0.82rem;color:var(--ink-lt);text-decoration:none;">Admin</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid #e8e3da;margin-top:32px;padding-top:20px;font-size:0.75rem;color:#9ca3af;text-align:center;">
+        Dupe Lab — for educational purposes only. Always patch-test new products.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Shared JS -->
+  <script>
+    // Autocomplete helper used across pages
+    function initAutocomplete(inputEl, resultsEl) {
+      let timeout;
+      inputEl.addEventListener('input', () => {
+        clearTimeout(timeout);
+        const q = inputEl.value.trim();
+        if (q.length < 2) { resultsEl.innerHTML = ''; resultsEl.style.display='none'; return; }
+        timeout = setTimeout(async () => {
+          const res = await fetch(`/search/autocomplete/?q=${encodeURIComponent(q)}`);
+          const data = await res.json();
+          if (!data.results.length) { resultsEl.style.display='none'; return; }
+          resultsEl.innerHTML = data.results.map(p => `
+            <div class="autocomplete-item" onclick="location.href='/products/${p.slug}/'">
+              <div>
+                <span style="font-weight:500;">${p.name}</span>
+                <span style="color:var(--ink-lt);margin-left:6px;font-size:0.78rem;">${p.brand}</span>
+              </div>
+              ${p.price ? `<span style="color:var(--sage-dk);font-weight:500;">$${p.price}</span>` : ''}
+            </div>
+          `).join('');
+          resultsEl.style.display = 'block';
+        }, 200);
+      });
+      document.addEventListener('click', e => {
+        if (!resultsEl.contains(e.target) && e.target !== inputEl) {
+          resultsEl.style.display = 'none';
+        }
+      });
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

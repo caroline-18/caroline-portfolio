@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Ingredient Safety Checker — Dupe Lab{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-10">
+
+  <div class="mb-8">
+    <h1 style="font-size:2.2rem;font-weight:400;margin-bottom:6px;">Safety Checker</h1>
+    <p style="color:var(--ink-lt);font-size:0.9rem;">Paste any ingredient list — we'll flag potential irritants.</p>
+  </div>
+
+  <div class="card p-7 mb-8">
+    <form method="post">
+      {% csrf_token %}
+      <label style="font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-lt);display:block;margin-bottom:8px;">Paste ingredient list</label>
+      <textarea
+        name="ingredients"
+        rows="6"
+        placeholder="Water, Glycerin, Niacinamide, Fragrance, Sodium Lauryl Sulfate, Dimethicone…"
+        class="search-input"
+        style="resize:vertical;font-size:0.85rem;line-height:1.6;"
+      >{% if result %}{{ result.ingredients|join:", " }}{% endif %}</textarea>
+      <button type="submit" class="btn-primary mt-4">Analyze Safety</button>
+    </form>
+  </div>
+
+  {% if result %}
+  <div class="flex flex-col gap-5">
+
+    <!-- Summary -->
+    <div class="card p-6" style="border-left:4px solid {% if result.safety.is_clean %}var(--sage){% elif result.safety.overall_risk == 'high' %}var(--rose){% else %}var(--gold){% endif %};">
+      <div class="flex items-center gap-4">
+        <div style="font-size:2.5rem;">
+          {% if result.safety.is_clean %}✅{% elif result.safety.overall_risk == 'high' %}⛔{% else %}⚠️{% endif %}
+        </div>
+        <div>
+          <h2 style="font-size:1.3rem;font-weight:400;">
+            Overall Risk:
+            <strong class="risk-{{ result.safety.overall_risk }}">{{ result.safety.overall_risk|capfirst }}</strong>
+          </h2>
+          <p style="font-size:0.85rem;color:var(--ink-lt);">
+            {{ result.ingredient_count }} ingredients analyzed · {{ result.safety.flag_count }} flag{{ result.safety.flag_count|pluralize }} found
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flags -->
+    {% if result.safety.flags %}
+    <div class="card p-6">
+      <h2 style="font-size:1.2rem;font-weight:400;margin-bottom:16px;">Flagged Ingredients</h2>
+      <div class="flex flex-col gap-4">
+        {% for flag in result.safety.flags %}
+        <div style="background:#fffdf5;border:1px solid #f0e0a0;border-radius:10px;padding:14px 16px;">
+          <div class="flex items-center justify-between mb-2">
+            <strong style="font-size:0.9rem;">{{ flag.category }}</strong>
+            <span class="pill {% if flag.risk_level == 'high' or flag.risk_level == 'avoid' %}pill-rose{% else %}pill-gold{% endif %}">
+              {{ flag.risk_level|capfirst }} Risk
+            </span>
+          </div>
+          <p style="font-size:0.83rem;color:var(--ink-lt);margin-bottom:8px;line-height:1.5;">{{ flag.description }}</p>
+          <div style="font-size:0.75rem;color:var(--ink-lt);">
+            <strong>Found:</strong>
+            {% for m in flag.matched %}<em>{{ m }}</em>{% if not forloop.last %}, {% endif %}{% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card p-8 text-center">
+      <div style="font-size:2.5rem;margin-bottom:10px;">🌿</div>
+      <h3 style="font-size:1.3rem;font-weight:400;margin-bottom:6px;">No flags detected</h3>
+      <p style="font-size:0.85rem;color:var(--ink-lt);">This ingredient list doesn't contain any commonly flagged irritants in our database.</p>
+    </div>
+    {% endif %}
+
+    <!-- Full ingredient list -->
+    <div class="card p-6">
+      <h2 style="font-size:1.1rem;font-weight:400;margin-bottom:12px;">All Ingredients ({{ result.ingredient_count }})</h2>
+      <div>
+        {% for ing in result.ingredients %}
+        <span class="ing-chip">{{ ing }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
