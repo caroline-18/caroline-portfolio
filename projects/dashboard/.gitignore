@@ -1,0 +1,12 @@
+DataBase/
+db.sqlite3
+__pycache__/
+*.pyc
+.env
+venv/
+staticfiles/
+.DS_Store.env
+*.sql
+nohup.out
+arnolds_analytics_dump.sql
+arnolds_schema.sql
