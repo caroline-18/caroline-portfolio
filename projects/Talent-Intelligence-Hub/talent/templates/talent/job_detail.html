@@ -1,0 +1,112 @@
+{% extends "talent/base.html" %}
+
+{% block title %}
+{{ job.title }} | Talent Intelligence Hub
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <a href="/jobs/"
+       class="btn btn-outline-secondary">
+        ← Back to Jobs
+    </a>
+</div>
+
+<div class="card shadow-sm">
+
+    <div class="card-body">
+
+        <h1 class="mb-1">
+            {{ job.title }}
+        </h1>
+
+        <p class="text-muted">
+            Job ID: {{ job.job_id }}
+        </p>
+
+        <hr>
+
+        <div class="row text-center mb-4">
+
+            <div class="col-md-4">
+                <h6 class="text-muted">
+                    Company
+                </h6>
+
+                <h5>
+                    {{ job.company }}
+                </h5>
+            </div>
+
+            <div class="col-md-4">
+                <h6 class="text-muted">
+                    Location
+                </h6>
+
+                <h5>
+                    {{ job.city }}
+                </h5>
+            </div>
+
+            <div class="col-md-4">
+                <h6 class="text-muted">
+                    Posted
+                </h6>
+
+                <h5>
+                    {{ job.posted_date }}
+                </h5>
+            </div>
+
+        </div>
+
+        <hr>
+
+        <h4 class="mb-3">
+            Job Description
+        </h4>
+
+        <div class="bg-light border rounded p-3 mb-4"
+             style="white-space: pre-line;">
+
+            {{ job.description }}
+
+        </div>
+
+        <h4 class="mb-3">
+            Skills Identified
+        </h4>
+
+        <div class="mb-4">
+
+            {% for skill in skills %}
+
+                <span class="badge rounded-pill bg-primary px-3 py-2 me-2 mb-2">
+                    {{ skill }}
+                </span>
+
+            {% empty %}
+
+                <span class="text-muted">
+                    No skills extracted.
+                </span>
+
+            {% endfor %}
+
+        </div>
+
+        <a
+            href="{{ job.job_url }}"
+            target="_blank"
+            class="btn btn-primary">
+
+            Open Original Job
+
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

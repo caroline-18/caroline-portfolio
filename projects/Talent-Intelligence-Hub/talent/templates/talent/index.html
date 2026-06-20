@@ -1,0 +1,336 @@
+{% extends "talent/base.html" %}
+
+{% block title %}
+Home | Talent Intelligence Hub
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+
+<div
+    class="p-3 mb-4 rounded-4 text-white shadow"
+    style="background: linear-gradient(135deg,#0d6efd,#6610f2);">
+
+    <h2 class="fw-bold mb-1">
+        Talent Intelligence Hub
+    </h2>
+
+    <p class="small mb-0">
+        Data Science, AI & Analytics Talent Intelligence Platform
+    </p>
+
+</div>
+
+<!-- KPI Cards -->
+
+<div class="row mb-4">
+
+    <div class="col-md-4 mb-3">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body text-center">
+
+                <div class="fs-3">
+                    💼
+                </div>
+
+                <small class="text-muted">
+                    Active Jobs
+                </small>
+
+                <h2 class="fw-bold text-primary">
+                    {{ total_jobs }}
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4 mb-3">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body text-center">
+
+                <div class="fs-3">
+                    🧠
+                </div>
+
+                <small class="text-muted">
+                    Skills
+                </small>
+
+                <h2 class="fw-bold text-success">
+                    {{ total_skills }}
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4 mb-3">
+
+        <div class="card border-0 shadow-sm h-100">
+
+            <div class="card-body text-center">
+
+                <div class="fs-3">
+                    🏢
+                </div>
+
+                <small class="text-muted">
+                    Companies
+                </small>
+
+                <h2 class="fw-bold text-dark">
+                    {{ total_companies }}
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Charts -->
+
+<div class="row">
+
+    <div class="col-md-4 mb-4">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-body">
+
+                <h5 class="text-center mb-3">
+                    Top Skills
+                </h5>
+
+                <canvas
+                    id="skillsChart"
+                    height="220">
+                </canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4 mb-4">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-body">
+
+                <h5 class="text-center mb-3">
+                    Top Hiring Cities
+                </h5>
+
+                <canvas
+                    id="citiesChart"
+                    height="220">
+                </canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-4 mb-4">
+
+        <div class="card shadow-sm h-100">
+
+            <div class="card-body">
+
+                <h5 class="text-center mb-3">
+                    Top Hiring Companies
+                </h5>
+
+                <canvas
+                    id="companiesChart"
+                    height="220">
+                </canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<hr class="mt-3">
+
+<script>
+
+function createChart(
+    chartId,
+    labels,
+    values,
+    color
+) {
+
+    new Chart(
+
+        document.getElementById(chartId),
+
+        {
+
+            type: "bar",
+
+            data: {
+
+                labels: labels,
+
+                datasets: [
+
+                    {
+
+                        data: values,
+
+                        backgroundColor: color,
+
+                        hoverBackgroundColor: color,
+
+                        borderRadius: 8,
+
+                        maxBarThickness: 45
+
+                    }
+
+                ]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                interaction: {
+
+                    intersect: false,
+
+                    mode: "index"
+
+                },
+
+                plugins: {
+
+                    legend: {
+
+                        display: false
+
+                    },
+
+                    tooltip: {
+
+                        displayColors: false,
+
+                        callbacks: {
+
+                            title: function(context) {
+
+                                return context[0].label;
+
+                            },
+
+                            label: function(context) {
+
+                                return "Open Jobs : " + context.raw;
+
+                            }
+
+                        }
+
+                    }
+
+                },
+
+                scales: {
+
+                    x: {
+
+                        ticks: {
+
+                            display: false
+
+                        },
+
+                        grid: {
+
+                            display: false
+
+                        },
+
+                        border: {
+
+                            display: false
+
+                        }
+
+                    },
+
+                    y: {
+
+                        beginAtZero: true,
+
+                        grid: {
+
+                            color: "#eeeeee"
+
+                        },
+
+                        border: {
+
+                            display: false
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    );
+
+}
+
+createChart(
+    "skillsChart",
+    {{ skill_labels|safe }},
+    {{ skill_counts|safe }},
+    "#0d6efd"
+);
+
+createChart(
+    "citiesChart",
+    {{ city_labels|safe }},
+    {{ city_counts|safe }},
+    "#198754"
+);
+
+createChart(
+    "companiesChart",
+    {{ company_labels|safe }},
+    {{ company_counts|safe }},
+    "#212529"
+);
+
+</script>
+
+{% endblock %}

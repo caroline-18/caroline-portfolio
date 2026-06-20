@@ -1,0 +1,169 @@
+{% extends "talent/base.html" %}
+
+{% block title %}
+Skills | Talent Intelligence Hub
+{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">
+    Skills Explorer
+</h1>
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <form method="GET">
+
+            <div class="row g-2">
+
+                <div class="col-md-8">
+
+                    <input
+                        type="text"
+                        name="search"
+                        class="form-control"
+                        placeholder="Search skills..."
+                        value="{{ selected_search }}">
+
+                </div>
+
+                <div class="col-md-2">
+
+                    <select
+                        name="sort"
+                        class="form-select">
+
+                        <option value="">
+                            Sort
+                        </option>
+
+                        <option value="skill"
+                            {% if selected_sort == "skill" %}
+                                selected
+                            {% endif %}>
+                            A-Z
+                        </option>
+
+                        <option value="count"
+                            {% if selected_sort == "count" %}
+                                selected
+                            {% endif %}>
+                            Highest Demand
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-2">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100">
+
+                        Filter
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div class="card shadow-sm">
+
+    <div class="card-body">
+
+        <table class="table table-hover align-middle">
+
+            <thead class="table-dark">
+
+                <tr>
+                    <th>Skill</th>
+                    <th>Demand</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+            {% for skill in page_obj %}
+
+                <tr>
+
+                    <td>
+
+                        <a
+                            href="/skills/{{ skill.skill }}/"
+                            class="fw-semibold text-decoration-none">
+
+                            {{ skill.skill }}
+
+                        </a>
+
+                    </td>
+
+                    <td>
+
+                        {{ skill.count }}
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        <nav class="mt-4">
+
+            <ul class="pagination justify-content-center">
+
+                {% if page_obj.has_previous %}
+
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.previous_page_number }}">
+                        Previous
+                    </a>
+                </li>
+
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Page {{ page_obj.number }}
+                        of
+                        {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.next_page_number }}">
+                        Next
+                    </a>
+                </li>
+
+                {% endif %}
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</div>
+
+{% endblock %}

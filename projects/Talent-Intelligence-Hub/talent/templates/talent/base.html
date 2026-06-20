@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+
+        {% block title %}
+
+        Talent Intelligence Hub
+
+        {% endblock %}
+
+    </title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <!-- Chart.js -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Chart Data Labels -->
+    <style>
+
+    body {
+
+        background-color: #f4f6f9;
+
+    }
+
+    canvas {
+
+        width: 100% !important;
+        height: 220px !important;
+
+    }
+
+</style>
+
+</head>
+
+<body>
+
+    <!-- Navbar -->
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+
+        <div class="container">
+
+            <a
+                class="navbar-brand fw-bold"
+                href="/">
+
+                Talent Intelligence Hub
+
+            </a>
+
+            <div class="navbar-nav ms-auto">
+
+                <a
+                    class="nav-link"
+                    href="/">
+
+                    Home
+
+                </a>
+
+                <a
+                    class="nav-link"
+                    href="/jobs/">
+
+                    Jobs
+
+                </a>
+
+                <a
+                    class="nav-link"
+                    href="/skills/">
+
+                    Skills
+
+                </a>
+
+                <a
+                    class="nav-link"
+                    href="/companies/">
+
+                    Companies
+
+                </a>
+
+                <a
+                    class="nav-link"
+                    href="/cities/">
+
+                    Cities
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- Main Content -->
+
+    <div class="container py-4">
+
+        {% block content %}
+
+        {% endblock %}
+
+    </div>
+
+    <!-- Footer -->
+
+    <footer class="text-center text-muted mt-4 mb-3">
+
+        <hr>
+
+        <p>
+
+            Powered by Adzuna API • Built with Django & Python
+
+        </p>
+
+    </footer>
+
+</body>
+
+</html>

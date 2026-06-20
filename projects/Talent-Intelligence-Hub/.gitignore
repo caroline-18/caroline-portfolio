@@ -1,0 +1,24 @@
+# Virtual Environment
+venv/
+
+# Environment Variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Django Database
+db.sqlite3
+
+# IDEs
+.vscode/
+.idea/
+
+# Raw Data
+data/raw/*.json
+
+# OS Files
+.DS_Store
+Thumbs.db

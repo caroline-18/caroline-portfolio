@@ -1,0 +1,180 @@
+{% extends "talent/base.html" %}
+
+{% block title %}
+{{ skill }} | Talent Intelligence Hub
+{% endblock %}
+
+{% block content %}
+
+<a href="/skills/"
+   class="btn btn-secondary mb-4">
+
+    ← Back to Skills
+
+</a>
+
+<div class="card shadow-sm mb-4">
+
+    <div class="card-body">
+
+        <h1>
+
+            {{ skill }}
+
+        </h1>
+
+        <hr>
+
+        <h4>
+
+            Active Jobs
+
+        </h4>
+
+        <h2 class="text-primary">
+
+            {{ total_jobs }}
+
+        </h2>
+
+    </div>
+
+</div>
+
+<div class="row">
+
+    <div class="col-md-6">
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header fw-bold">
+
+                Top Hiring Companies
+
+            </div>
+
+            <ul class="list-group list-group-flush">
+
+                {% for company in companies %}
+
+                <li class="list-group-item d-flex justify-content-between">
+
+                    {{ company.company }}
+
+                    <span class="badge bg-dark">
+
+                        {{ company.count }}
+
+                    </span>
+
+                </li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <div class="card shadow-sm mb-4">
+
+            <div class="card-header fw-bold">
+
+                Top Hiring Cities
+
+            </div>
+
+            <ul class="list-group list-group-flush">
+
+                {% for city in cities %}
+
+                <li class="list-group-item d-flex justify-content-between">
+
+                    {{ city.city }}
+
+                    <span class="badge bg-success">
+
+                        {{ city.count }}
+
+                    </span>
+
+                </li>
+
+                {% endfor %}
+
+            </ul>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card shadow-sm">
+
+    <div class="card-header fw-bold">
+
+        Latest Jobs
+
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-hover">
+
+            <thead>
+
+                <tr>
+
+                    <th>Title</th>
+                    <th>Company</th>
+                    <th>City</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for job in jobs %}
+
+                <tr>
+
+                    <td>
+
+                        <a href="/jobs/{{ job.job_id }}/">
+
+                            {{ job.title }}
+
+                        </a>
+
+                    </td>
+
+                    <td>
+
+                        {{ job.company }}
+
+                    </td>
+
+                    <td>
+
+                        {{ job.city }}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

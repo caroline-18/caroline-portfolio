@@ -1,0 +1,213 @@
+```django
+{% extends "talent/base.html" %}
+
+{% block title %}
+Jobs | Talent Intelligence Hub
+{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">
+    Live Data Science Jobs
+</h1>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+        <form method="GET">
+
+            <div class="row g-2">
+
+                <div class="col-md-3">
+                    <input
+                        type="text"
+                        name="search"
+                        class="form-control"
+                        placeholder="Search jobs..."
+                        value="{{ selected_search }}">
+                </div>
+
+                <div class="col-md-3">
+                    <select
+                        name="company"
+                        class="form-select">
+
+                        <option value="">
+                            All Companies
+                        </option>
+
+                        {% for comp in companies %}
+                        <option value="{{ comp }}"
+                            {% if comp == selected_company %}
+                                selected
+                            {% endif %}>
+                            {{ comp }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <select
+                        name="city"
+                        class="form-select">
+
+                        <option value="">
+                            All Cities
+                        </option>
+
+                        {% for c in cities %}
+                        <option value="{{ c }}"
+                            {% if c == selected_city %}
+                                selected
+                            {% endif %}>
+                            {{ c }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <select
+                        name="sort"
+                        class="form-select">
+
+                        <option value="">
+                            Sort
+                        </option>
+
+                        <option value="newest"
+                            {% if selected_sort == "newest" %}
+                                selected
+                            {% endif %}>
+                            Newest
+                        </option>
+
+                        <option value="company"
+                            {% if selected_sort == "company" %}
+                                selected
+                            {% endif %}>
+                            Company A-Z
+                        </option>
+
+                        <option value="city"
+                            {% if selected_sort == "city" %}
+                                selected
+                            {% endif %}>
+                            City A-Z
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button
+                        class="btn btn-primary w-100"
+                        type="submit">
+                        Filter
+                    </button>
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<div class="card shadow-sm">
+
+    <div class="card-body">
+
+        <table class="table table-hover align-middle">
+
+            <thead class="table-dark">
+                <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>City</th>
+                    <th>Posted</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            {% for job in page_obj %}
+
+                <tr>
+
+                    <td>
+                        <a href="/jobs/{{ job.job_id }}/">
+                            {{ job.title }}
+                        </a>
+                    </td>
+
+                    <td>{{ job.company }}</td>
+
+                    <td>{{ job.city }}</td>
+
+                    <td>{{ job.posted_date|date:"d M Y" }}</td>
+
+                    <td>
+                        <a
+                            href="{{ job.job_url }}"
+                            target="_blank"
+                            class="btn btn-sm btn-primary">
+                            Open
+                        </a>
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        <nav class="mt-4">
+
+            <ul class="pagination justify-content-center">
+
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.previous_page_number }}&search={{ selected_search }}&company={{ selected_company }}&city={{ selected_city }}&sort={{ selected_sort }}">
+                        Previous
+                    </a>
+                </li>
+                {% endif %}
+
+                <li class="page-item disabled">
+
+                    <span class="page-link">
+
+                        Page {{ page_obj.number }}
+                        of
+                        {{ page_obj.paginator.num_pages }}
+
+                    </span>
+
+                </li>
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                       href="?page={{ page_obj.next_page_number }}&search={{ selected_search }}&company={{ selected_company }}&city={{ selected_city }}&sort={{ selected_sort }}">
+                        Next
+                    </a>
+                </li>
+                {% endif %}
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</div>
+
+{% endblock %}
